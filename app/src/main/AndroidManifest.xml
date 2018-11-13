@@ -10,6 +10,12 @@
         android:supportsRtl="true"
         android:name=".MyApp"
         android:theme="@style/AppTheme">
+        <service
+            android:name=".MyForeGroundService"
+            android:enabled="true"
+            android:exported="true"
+        />
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

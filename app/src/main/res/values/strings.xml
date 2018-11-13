@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">ВКонкурсе</string>
     <string name="autorization">Авторизация</string>
-    <integer name="com_vk_sdk_AppId">6740727</integer>
+    <string name="server">http://vkonkurse.herokuapp.com</string>
 </resources>

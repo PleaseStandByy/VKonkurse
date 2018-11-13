@@ -17,9 +17,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    dataBinding{
+        enabled = true
+    }
+//    kapt {
+//        generateStubs = true
+//    }
 }
 ext {
-    support = '26.0.1'
+    support = '28.0.0'
     retrofit = '2.2.0'
     dagger = '2.7'
     okhttp = '3.4.1'
@@ -33,6 +39,7 @@ ext {
     imageview = '3.6.0'
     fabric = '2.9.2'
     preferences = '0.1.3'
+    toasty = '1.3.0'
 }
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -41,8 +48,14 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+//    kapt 'com.android.databinding:compiler:3.0.0'
+
+
+//    implementation 'com.github.GrenderG:Toasty:1.3.0'
 
     compile "com.android.support:appcompat-v7:$support"
+    compile "com.android.support:design:$support"
+    compile "com.android.support:cardview-v7:$support"
 
     compile "com.github.bumptech.glide:glide:$glide"
 
@@ -70,6 +83,6 @@ dependencies {
     compile "org.greenrobot:eventbus:$eventbus"
     compile "in.co.ophio:secure-preferences:$preferences"
     compile "com.davemorrissey.labs:subsampling-scale-image-view:$imageview"
-    annotationProcessor "com.android.databinding:compiler:$databinding"
+//    annotationProcessor "com.android.databinding:compiler:$databinding"
 
 }
