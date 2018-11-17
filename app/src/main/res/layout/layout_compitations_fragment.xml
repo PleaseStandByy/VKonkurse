@@ -10,6 +10,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/colorBackroundGray"
         android:orientation="vertical">
 
         <Switch
@@ -19,10 +20,12 @@
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
             android:text="Автоучастие" />
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recycler_view"
+            android:layout_below="@+id/switchService"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 

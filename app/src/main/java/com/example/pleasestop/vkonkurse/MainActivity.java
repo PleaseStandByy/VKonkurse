@@ -5,29 +5,22 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.support.v4.content.ContextCompat;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.pleasestop.vkonkurse.Fragments.NewCompetitionFragments;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKCallback;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKError;
-import com.vk.sdk.api.VKParameters;
-import com.vk.sdk.api.VKRequest;
-import com.vk.sdk.api.VKResponse;
 
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.inject.Inject;
 
@@ -47,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
     @Inject
     SharedPreferences preferences;
 
+    @BindView(R.id.navigation)
+    TabLayout tabLayout;
     /**
      * temp
      */
@@ -62,6 +57,42 @@ public class MainActivity extends AppCompatActivity {
         if(!token.equals("")){
             createFragment();
         }
+
+        tabLayout.addTab(tabLayout.newTab().setText("Активные"));
+        tabLayout.addTab(tabLayout.newTab().setText("Завершённые"));
+        tabLayout.setSelectedTabIndicatorColor(getResources().getColor(R.color.colorAccent));
+
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+
+                Fragment fragment = new NewCompetitionFragments();
+
+                /*if (tab.getPosition() == 0) {
+                    fragment = new ProjectInitiativesFragment();
+                } else  {
+                    fragment = new StartProjectFragment();
+                }*/
+
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                android.support.v4.app.FragmentTransaction transaction = fragmentManager.beginTransaction();
+                transaction.replace(R.id.container, fragment);
+
+                transaction.commit();
+
+                tabLayout.getTabAt(tab.getPosition()).select();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
 
 
     }
@@ -90,43 +121,12 @@ public class MainActivity extends AppCompatActivity {
     @Nullable
     @OnClick(R.id.buttonAutorization)
     public void autorization(){
-//        buttonAutorization.setVisibility(View.GONE);
-//        setLike("post","45135634","7030");
         VKSdk.login(this, scopes);
     }
 
-    public  Integer setLike(String type, String owner_id, String item_id ) {
-        final Integer[] likes = new Integer[1];
-        VKRequest request = new VKRequest("likes.add", VKParameters.from("access_token", "742073ecb45f5553365432538e2c8e9889c060215a2523483d411be3752a93a00e2f0ddd734916b42da50",
-                "type", type, "owner_id", "-" + owner_id, "item_id", item_id));
-        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
-                try {
-                    JSONObject json = response.json.getJSONObject("response");
-                    JsonParser jsonParser = new JsonParser();
-                    JsonObject jsonObject = (JsonObject)jsonParser.parse(json.toString());
-                    likes[0] = jsonObject.get("likes").getAsInt();
-                    Log.i("jopa", likes[0].toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onError(VKError error) {
-//                showError(error.errorMessage);
-                super.onError(error);
-            }
-
-        });
-
-        Log.i("jopa", "opa");
-        return likes[0];
-    }
 
     private void createFragment(){
+        tabLayout.setVisibility(View.VISIBLE);
         repository.userID = preferences.getString(Constans.USER_ID, "");
         repository.token = preferences.getString(Constans.TOKEN, "");
         NewCompetitionFragments fragment = new NewCompetitionFragments();

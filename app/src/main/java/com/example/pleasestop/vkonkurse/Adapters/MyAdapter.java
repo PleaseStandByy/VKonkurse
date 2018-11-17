@@ -13,12 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class RecyclerUniversalAdapter<T, P> extends RecyclerView.Adapter<RecyclerUniversalAdapter.ViewHolder> {
+public class MyAdapter<T, P> extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     private List<T> items = new ArrayList<>();
     private P presenter;
     private int layout;
 
-    public RecyclerUniversalAdapter(int layout, P presenter) {
+    public MyAdapter(int layout, P presenter) {
         this.layout = layout;
         this.presenter = presenter;
     }
@@ -31,7 +31,7 @@ public class RecyclerUniversalAdapter<T, P> extends RecyclerView.Adapter<Recycle
     }
 
     @Override
-    public void onBindViewHolder(RecyclerUniversalAdapter.ViewHolder holder,
+    public void onBindViewHolder(MyAdapter.ViewHolder holder,
                                  int position) {
         final T item = items.get(position);
         holder.getBinding().setVariable(BR.item, item);
@@ -49,7 +49,7 @@ public class RecyclerUniversalAdapter<T, P> extends RecyclerView.Adapter<Recycle
     }
 
     public void addAll(List<T> items,
-                       boolean sortDistricts) {
+                       boolean sort) {
         this.items.addAll(items);
 
         notifyDataSetChanged();

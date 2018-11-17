@@ -15,6 +15,7 @@ import android.util.Pair;
 import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 import com.example.pleasestop.vkonkurse.model.IsMemberResult;
+import com.example.pleasestop.vkonkurse.model.VkRequestTask;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -28,23 +29,36 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.SocketTimeoutException;
+import java.util.Observable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 import static com.example.pleasestop.vkonkurse.MyApp.CHANNEL_ID;
 import static com.example.pleasestop.vkonkurse.Repository.TAG;
 
 public class MyForeGroundService extends Service {
 
+    String TAG_VK_TASK = "tagvk";
     @Inject
     Repository repository;
 
+    private Integer vkDelay;
+    private Integer contestRequestDelay;
+    private Integer contestListDelay;
+    private Integer countCompetitions;
+
+    Disposable disposable;
+    Disposable disposableWait;
+    private Observer observerVkReqsponseTask;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -54,7 +68,30 @@ public class MyForeGroundService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String input = intent.getStringExtra("inputExtra");
+        observerVkReqsponseTask = new Observer<VkRequestTask>() {
+            @Override
+            public void onSubscribe(Disposable d) {
 
+            }
+
+            @Override
+            public void onNext(VkRequestTask vkRequestTask) {
+                vkRequestTask.run(repository);
+                repository.vkRequestTaskIds.remove(vkRequestTask.getIdTask());
+                runVkRequests(vkDelay);
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        };
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
@@ -68,20 +105,26 @@ public class MyForeGroundService extends Service {
 
         startForeground(1, notification);
         loadCompitation(0);
+        runVkRequests(2);
 
         return START_NOT_STICKY;
     }
 
     void loadCompitation(Integer delay){
+        Log.i(TAG, "loadCompitation: ");
         showError("loadCompitation");
-        repository.loadAllCompetition(repository.userID)
+        disposable = repository.loadAllCompetition(repository.userID)
                 .delay(delay,TimeUnit.SECONDS)
                 .subscribe(new Consumer<CompetitionsList<Competition>>() {
                     @Override
                     public void accept(CompetitionsList<Competition> competitionCompetitionsList) throws Exception {
+                        contestListDelay = competitionCompetitionsList.getContestListDelay();
+                        contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
+                        vkDelay = competitionCompetitionsList.getVkDelay();
                         for(Competition competition : competitionCompetitionsList.getItems()){
                             chechUserIsMember(competition);
                         }
+                        loadCompitation(contestRequestDelay);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -92,6 +135,7 @@ public class MyForeGroundService extends Service {
                         showError(throwable.getMessage());
                     }
                 });
+
     }
     void checkResolution(final Competition competition, final boolean isMember, Integer delay){
         showError("checkResolution");
@@ -114,7 +158,7 @@ public class MyForeGroundService extends Service {
                                 break;
                             case "REJECTED":
                                 showError("REJECTED");
-                                checkResolution(competition, isMember, 10);
+                                checkResolution(competition, isMember, repository.contestListDelay);
                                 break;
                             case "REJECTED_FOREVER":
                                 showError("REJECTED_FOREVER");
@@ -126,8 +170,9 @@ public class MyForeGroundService extends Service {
                 }, new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
-                        showError(throwable.getMessage());
+//                        showError(throwable.getMessage());
                         Log.i(TAG, "acceptCheckResolution: " + throwable.toString());
+                        checkResolution(competition, isMember, contestListDelay);
                     }
                 });
     }
@@ -172,102 +217,53 @@ public class MyForeGroundService extends Service {
         });
     }
 
-    public void joinToGroup(final String groupId){
-        Single.fromCallable(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                VKRequest request = new VKRequest("groups.join", VKParameters.from("access_token", repository.token ,"group_id", groupId));
-                final Integer[] resp = new Integer[1];
-                resp[0] = 0;
-                request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-                    @Override
-                    public void onComplete(VKResponse response) {
-                        super.onComplete(response);
-                        try {
-                            JSONObject json = response.json.getJSONObject("response");
-                            JsonParser jsonParser = new JsonParser();
-                            JsonObject jsonObject = (JsonObject)jsonParser.parse(json.toString());
-                            resp[0] = jsonObject.get("likes").getAsInt();
-                            Log.i("jopa", resp[0].toString());
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onError(VKError error) {
-                        showError(error.errorMessage);
-                        super.onError(error);
-                    }
-
-                });
-                return resp[0];
-            }
-        }).subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
-
+    public void joinToGroup(final String groupId) {
+        VkRequestTask task = new VkRequestTask();
+        task.createJoinToGroup(groupId);
+        checkTask(task);
     }
 
     public void joinToSponsorGroup(Competition competition){
-        final String[] infoPost = new String[1];
-        String posts = "-" + competition.getPairIdAndPostid().first +
-                "_" + competition.getPairIdAndPostid().second;
-        VKRequest request = new VKRequest("wall.getById", VKParameters.from("access_token", repository.token, "posts", posts));
-        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
-                JsonParser jsonParser = new JsonParser();
-                JsonObject jsonObject = (JsonObject) jsonParser.parse(response.responseString);
-                JsonArray jsonArray = jsonObject.getAsJsonArray("response");
-                jsonObject = (JsonObject) jsonArray.get(0);
-                String text = jsonObject.get("text").getAsString();
-                joinToGroup(VkUtil.getSponsorId(text));
-                Log.i("jopa", infoPost[0].toString());
-            }
-
-            @Override
-            public void onError(VKError error) {
-                showError(error.errorMessage);
-                super.onError(error);
-            }
-
-        });
+        VkRequestTask task = new VkRequestTask();
+        task.createJoinToSponsorGroup(competition);
+        checkTask(task);
     }
-    public  Integer setLike(String type, String owner_id, String item_id ) {
-        final Integer[] likes = new Integer[1];
-        VKRequest request = new VKRequest("likes.add", VKParameters.from("access_token",
-                repository.token,"type",
-                type, "owner_id", "-" + owner_id, "item_id",
-                item_id));
-        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
-                try {
-                    JSONObject json = response.json.getJSONObject("response");
-                    JsonParser jsonParser = new JsonParser();
-                    JsonObject jsonObject = (JsonObject)jsonParser.parse(json.toString());
-                    likes[0] = jsonObject.get("likes").getAsInt();
-                    Log.i("jopa", likes[0].toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onError(VKError error) {
-                showError(error.errorMessage);
-                super.onError(error);
-            }
-
-        });
-
-        Log.i("jopa", "opa");
-        return likes[0];
+    public void setLike(String type, String owner_id, String item_id ) {
+        VkRequestTask task = new VkRequestTask();
+        task.createSetLike(type,owner_id,item_id);
+        checkTask(task);
     }
 
+    void checkTask(VkRequestTask task){
+        if(!repository.vkRequestTaskIds.contains(task.getIdTask())){
+            repository.vkRequestTasks.add(task);
+            repository.vkRequestTaskIds.add(task.getIdTask());
+        }
+    }
+
+    private void runVkRequests(Integer delay){
+        Log.i(TAG_VK_TASK, "runVkRequests: " + delay);
+        if(repository.vkRequestTasks.peek() != null) {
+            Log.i(TAG_VK_TASK, "peek not null");
+            io.reactivex.Observable.just(repository.vkRequestTasks.poll())
+                    .delay(delay, TimeUnit.SECONDS)
+                    .observeOn(Schedulers.newThread())
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(observerVkReqsponseTask);
+        } else {
+            Log.i(TAG_VK_TASK, "peek is null");
+            disposableWait = io.reactivex.Observable.just(delay)
+                    .delay(delay, TimeUnit.SECONDS)
+                    .observeOn(Schedulers.newThread())
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(new Consumer<Integer>() {
+                        @Override
+                        public void accept(Integer integer) throws Exception {
+                            runVkRequests(integer);
+                        }
+                    });
+        }
+    }
 
     private Notification getMyActivityNotification(String text){
         PendingIntent contentIntent = PendingIntent.getActivity(this,
@@ -282,7 +278,6 @@ public class MyForeGroundService extends Service {
 
     public void showError(String error) {
 //        Toast.makeText(getActivity(),error,Toast.LENGTH_SHORT).show();
-        Log.i(TAG, "error");
         Notification notification = getMyActivityNotification(error);
 
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -290,6 +285,8 @@ public class MyForeGroundService extends Service {
     }
     @Override
     public void onDestroy() {
+        disposable.dispose();
+        disposableWait.dispose();
         super.onDestroy();
     }
 
