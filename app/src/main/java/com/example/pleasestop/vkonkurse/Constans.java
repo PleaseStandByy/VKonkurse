@@ -4,6 +4,7 @@ public class Constans {
 
     public static final String TOKEN = "token";
     public static final String USER_ID = "user_id";
+    public static final String IS_AUTO = "isAuto";
     public static String REJECT = "REJECT";
     public static String ALLOWED = "ALLOWED";
     public static String REJECT_FOREVER = "REJECT_FOREVER";

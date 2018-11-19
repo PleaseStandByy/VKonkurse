@@ -4,6 +4,7 @@ package com.example.pleasestop.vkonkurse;
 import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 import com.example.pleasestop.vkonkurse.model.IsMemberResult;
+import com.google.gson.JsonObject;
 
 import io.reactivex.Observable;
 import retrofit2.http.GET;
@@ -19,7 +20,29 @@ public interface ApiService {
 
     // example : /comp/ask_for_participation?id=1&vk_uid=1&subscribed=false
     @GET("/comp/ask_for_participation")
-    Observable<IsMemberResult> checkResolution(@Query("id") Integer  id, @Query("vk_uid") String vkUid, @Query("subscribed") boolean isMember);
+    Observable<IsMemberResult> checkResolution(@Query("id") Integer  id,
+                                               @Query("vk_uid") String vkUid,
+                                               @Query("subscribed") boolean isMember);
 
+
+    @GET("/comp/participation_done")
+    Observable<JsonObject> participationDone(@Query("id") String id, @Query("vk_uid") String vkId);
+
+    @GET("https://api.vk.com/method/wall.getById")
+    Observable<JsonObject> getWall(@Query("access_token") String token,
+                                   @Query("v") String sdkVersion,
+                                   @Query("posts") String posts);
+
+    @GET("https://api.vk.com/method/groups.join")
+    Observable<JsonObject> joinToGroup(@Query("access_token") String token,
+                                       @Query("v") String sdkVersion,
+                                       @Query("group_id") String id);
+
+    @GET("https://api.vk.com/method/likes.add")
+    Observable<JsonObject> setLike(@Query("access_token") String token,
+                                     @Query("v") String sdkVersion,
+                                     @Query("type") String type,
+                                     @Query("owner_id") String ownerId,
+                                     @Query("item_id") Integer itemId);
 
 }

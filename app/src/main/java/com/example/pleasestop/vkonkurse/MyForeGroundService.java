@@ -50,7 +50,7 @@ public class MyForeGroundService extends Service {
     String TAG_VK_TASK = "tagvk";
     @Inject
     Repository repository;
-
+    Notification notification;
     private Integer vkDelay;
     private Integer contestRequestDelay;
     private Integer contestListDelay;
@@ -58,6 +58,7 @@ public class MyForeGroundService extends Service {
 
     Disposable disposable;
     Disposable disposableWait;
+    Disposable disposableResolution;
     private Observer observerVkReqsponseTask;
     @Override
     public void onCreate() {
@@ -96,7 +97,7 @@ public class MyForeGroundService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+        notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Example Service")
                 .setContentText(input)
                 .setSmallIcon(R.drawable.ic_ab_app)
@@ -107,7 +108,7 @@ public class MyForeGroundService extends Service {
         loadCompitation(0);
         runVkRequests(2);
 
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     void loadCompitation(Integer delay){
@@ -142,7 +143,7 @@ public class MyForeGroundService extends Service {
         if(!isMember) {
             joinToGroup(competition.getPairIdAndPostid().first);
         }
-        repository.loadResolution(competition.getId(), repository.userID, isMember)
+        disposableResolution = repository.loadResolution(competition.getId(), repository.userID, isMember)
                 .delay(delay,TimeUnit.SECONDS)
                 .subscribe(new Consumer<IsMemberResult>() {
                     @Override
@@ -158,7 +159,7 @@ public class MyForeGroundService extends Service {
                                 break;
                             case "REJECTED":
                                 showError("REJECTED");
-                                checkResolution(competition, isMember, repository.contestListDelay);
+                                checkResolution(competition, isMember, contestListDelay);
                                 break;
                             case "REJECTED_FOREVER":
                                 showError("REJECTED_FOREVER");
@@ -242,6 +243,8 @@ public class MyForeGroundService extends Service {
     }
 
     private void runVkRequests(Integer delay){
+        if(delay == null)
+            delay = 2;
         Log.i(TAG_VK_TASK, "runVkRequests: " + delay);
         if(repository.vkRequestTasks.peek() != null) {
             Log.i(TAG_VK_TASK, "peek not null");
@@ -277,7 +280,6 @@ public class MyForeGroundService extends Service {
     }
 
     public void showError(String error) {
-//        Toast.makeText(getActivity(),error,Toast.LENGTH_SHORT).show();
         Notification notification = getMyActivityNotification(error);
 
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -285,8 +287,13 @@ public class MyForeGroundService extends Service {
     }
     @Override
     public void onDestroy() {
-        disposable.dispose();
-        disposableWait.dispose();
+        if(disposable != null)
+            disposable.dispose();
+        if(disposableWait != null)
+            disposableWait.dispose();
+        if(disposableResolution != null)
+            disposableResolution.dispose();
+        repository.vkRequestTasks.clear();
         super.onDestroy();
     }
 

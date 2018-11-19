@@ -20,6 +20,7 @@ import com.arellomobile.mvp.MvpAppCompatFragment;
 import com.arellomobile.mvp.presenter.InjectPresenter;
 import com.arellomobile.mvp.presenter.ProvidePresenter;
 import com.example.pleasestop.vkonkurse.Adapters.MyAdapter;
+import com.example.pleasestop.vkonkurse.Constans;
 import com.example.pleasestop.vkonkurse.MyApp;
 import com.example.pleasestop.vkonkurse.MyForeGroundService;
 import com.example.pleasestop.vkonkurse.model.Competition;
@@ -34,7 +35,7 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
+import butterknife.OnCheckedChanged;
 
 /**
  * Все новые конкурсы будут появляться здесь
@@ -65,14 +66,14 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
     @BindView(R.id.recycler_view)
     RecyclerView list;
 
-    @OnClick(R.id.switchService)
-    public void click(){
-        if(!swichService.getSplitTrack()){
-            swichService.setSplitTrack(true);
-            startService();
-        } else {
-            swichService.setSplitTrack(false);
+    @OnCheckedChanged(R.id.switchService)
+    public void check(){
+        if(!swichService.isChecked()){
+            preferences.edit().putBoolean(Constans.IS_AUTO, false).commit();
             stopService();
+        } else {
+            startService();
+            preferences.edit().putBoolean(Constans.IS_AUTO, true).commit();
         }
     }
     @Nullable
@@ -80,8 +81,9 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.layout_compitations_fragment, container, false);
         MyApp.getNetComponent().inject(this);
+        Switch switchService = view.findViewById(R.id.switchService);
+        switchService.setChecked(preferences.getBoolean(Constans.IS_AUTO, false));
         ButterKnife.bind(this, view);
-
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         list.setLayoutManager(linearLayoutManager);
         list.setHasFixedSize(true);
@@ -96,6 +98,7 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
 
     @Override
     public void startService(){
+        stopService();
         String input = "test";
         Intent serviceIntent = new Intent(getActivity(), MyForeGroundService.class);
         serviceIntent.putExtra("inputExtra", input);
@@ -116,6 +119,7 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
 
     @Override
     public void showError(String error) {
+        errorMessege.setVisibility(View.VISIBLE);
         errorMessege.setText(error);
     }
 

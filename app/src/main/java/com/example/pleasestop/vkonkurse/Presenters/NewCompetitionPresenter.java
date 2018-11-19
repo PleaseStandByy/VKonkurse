@@ -1,6 +1,7 @@
 package com.example.pleasestop.vkonkurse.presenters;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 import com.arellomobile.mvp.InjectViewState;
 import com.arellomobile.mvp.MvpPresenter;
@@ -12,13 +13,17 @@ import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
 import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 @InjectViewState
 public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
@@ -34,7 +39,8 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     @Override
     protected void onFirstViewAttach() {
         super.onFirstViewAttach();
-        loadNewCompetitions(0);
+        getViewState().showError("Список конкурсов пока пуст");
+//        loadNewCompetitions(0);
     }
 
 
@@ -49,9 +55,8 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                         repository.contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
                         repository.vkDelay = competitionCompetitionsList.getVkDelay();
                         competitionList = competitionCompetitionsList.getItems();
-                        for(Competition competition : competitionList){
-                            repository.loadTextFromGroup(competition);
-                        }
+
+                        getWalls();
                         getViewState().loading(false);
                         getViewState().addList(competitionCompetitionsList.getItems());
                     }
@@ -60,10 +65,48 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                     public void accept(Throwable throwable) throws Exception {
                         getViewState().loading(false);
                         getViewState().showError(throwable.getMessage());
-//                        if(throwable instanceof SocketTimeoutException){
-//                            loadNewCompetitions(10);
-//                        }
                     }
                 });
+    }
+
+    private void getWalls(){
+        Observable.fromIterable(competitionList)
+                .flatMap(new Function<Competition, ObservableSource<?>>() {
+                    @Override
+                    public ObservableSource<?> apply(Competition competition) throws Exception {
+                        return repository.getWall(competition);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .subscribe(new Observer<Object>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        Log.i("getWallJopa", "onSubscribe: ");
+                    }
+
+                    @Override
+                    public void onNext(Object o) {
+                        Log.i("getWallJopa", "onNext: ");
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.i("getWallJopa", "onError: ");
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        Log.i("getWallJopa", "onComplete: ");
+
+                    }
+                });
+
+
+//        for(Competition competition : competitionList){
+//            repository.loadTextFromGroup(competition);
+//        }
     }
 }

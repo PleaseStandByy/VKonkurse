@@ -1,5 +1,6 @@
 package com.example.pleasestop.vkonkurse;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.util.Pair;
 
@@ -10,6 +11,8 @@ import com.example.pleasestop.vkonkurse.model.VkRequestTask;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.vk.sdk.VKSdk;
+import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
@@ -27,13 +30,17 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 
 public class Repository {
     public static final String TAG ="jopa";
+    public static final String TAG1="jopa1";
     @Inject
     ApiService apiService;
+    @Inject
+    SharedPreferences preferences;
 
     public String token;
     public String userID;
@@ -61,7 +68,7 @@ public class Repository {
         return apiService.loadAllCompetition(vkUId)
                 .subscribeOn(Schedulers.io())
                 .delay(delay, TimeUnit.SECONDS)
-                .observeOn(Schedulers.io());
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     public Observable<IsMemberResult> loadResolution(Integer id, String vkUid, boolean isMember) {
@@ -70,7 +77,69 @@ public class Repository {
                 .observeOn(Schedulers.computation());
     }
 
-    public Disposable joinToGroup(final String groupId){
+    public Observable<JsonObject> participationDone(String id, String vkUid){
+        return apiService.participationDone(id, vkUid)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation());
+    }
+    public Observable<JsonObject> getWall(Competition competition) {
+        Pair<String, String> pairIdAndPostid = VkUtil.getGroupAndPostIds(competition.getLink());
+        String posts = "-" + pairIdAndPostid.first +
+                "_" + pairIdAndPostid.second;
+        return apiService.getWall(preferences.getString(Constans.TOKEN,""), VKSdk.getApiVersion(), posts)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation());
+    }
+
+    public void setLike(String ownerId, String itemId) {
+        String str1 = preferences.getString(Constans.TOKEN,"");
+        String str2 = VKSdk.getApiVersion();
+        String str3 = "post";
+        String str4 = "-" + ownerId;
+        Integer str5 = Integer.valueOf(itemId);
+        apiService.setLike(
+                    str1,
+                    str2,
+                    str3,
+                    str4,
+                    str5
+                )
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .subscribe(new Consumer<JsonObject>() {
+                    @Override
+                    public void accept(JsonObject jsonObject) throws Exception {
+                        Log.i(TAG1, jsonObject.toString());
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.i(TAG1, throwable.toString());
+                    }
+                });
+    }
+
+    public void joinToGroup(String groupId) {
+        apiService.joinToGroup(
+                    preferences.getString(Constans.TOKEN,""),
+                    VKSdk.getApiVersion(),
+                    groupId
+                )
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .subscribe(new Consumer<JsonObject>() {
+                    @Override
+                    public void accept(JsonObject jsonObject) throws Exception {
+                        Log.i(TAG1, jsonObject.toString());
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.i(TAG1, throwable.toString());
+                    }
+                });
+    }
+    public Disposable joinToGroupttt(final String groupId){
         Log.i(TAG, "test run");
         return Single.fromCallable(new Callable<Integer>() {
             @Override
@@ -147,53 +216,89 @@ public class Repository {
 
     public void joinToSponsorGroup(Competition competition){
         final String[] infoPost = new String[1];
-        String posts = "-" + competition.getPairIdAndPostid().first +
+        String posts = "-+" + competition.getPairIdAndPostid().first +
                 "_" + competition.getPairIdAndPostid().second;
-        VKRequest request = new VKRequest("wall.getById", VKParameters.from("access_token", token, "posts", posts));
-        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
+        getWall(competition).subscribe(new Consumer<JsonObject>() {
             @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
-                JsonParser jsonParser = new JsonParser();
-                JsonObject jsonObject = (JsonObject) jsonParser.parse(response.responseString);
+            public void accept(JsonObject jsonObject) throws Exception {
                 JsonArray jsonArray = jsonObject.getAsJsonArray("response");
                 jsonObject = (JsonObject) jsonArray.get(0);
                 String text = jsonObject.get("text").getAsString();
                 joinToGroup(VkUtil.getSponsorId(text));
-                Log.i("jopa", infoPost[0].toString());
+                Log.i(TAG1, jsonObject.toString());
             }
-
+        }, new Consumer<Throwable>() {
             @Override
-            public void onError(VKError error) {
-                super.onError(error);
+            public void accept(Throwable throwable) throws Exception {
+                Log.i(TAG1, throwable.getMessage());
             }
-
         });
+//        VKRequest request = new VKRequest("wall.getById", VKParameters.from("access_token", token, "posts", posts));
+//        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
+//            @Override
+//            public void onComplete(VKResponse response) {
+//                super.onComplete(response);
+//                JsonParser jsonParser = new JsonParser();
+//                JsonObject jsonObject = (JsonObject) jsonParser.parse(response.responseString);
+//                JsonArray jsonArray = jsonObject.getAsJsonArray("response");
+//                jsonObject = (JsonObject) jsonArray.get(0);
+//                String text = jsonObject.get("text").getAsString();
+//                joinToGroup(VkUtil.getSponsorId(text));
+//                Log.i("jopa", infoPost[0].toString());
+//            }
+//
+//            @Override
+//            public void onError(VKError error) {
+//                super.onError(error);
+//            }
+//
+//        });
     }
 
     public void loadTextFromGroup(final Competition competition){
-        Pair<String, String> pairIdAndPostid = VkUtil.getGroupAndPostIds(competition.getLink());
-        String posts = "-" + pairIdAndPostid.first +
-                "_" + pairIdAndPostid.second;
-        VKRequest request = new VKRequest("wall.getById", VKParameters.from("access_token", token, "posts", posts));
-        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
-                JsonParser jsonParser = new JsonParser();
-                JsonObject jsonObject = (JsonObject) jsonParser.parse(response.responseString);
-                JsonArray jsonArray = jsonObject.getAsJsonArray("response");
-                jsonObject = (JsonObject) jsonArray.get(0);
-                String text = jsonObject.get("text").getAsString();
-                joinToGroup(VkUtil.getSponsorId(text));
-                competition.setAction(text);
-            }
 
-            @Override
-            public void onError(VKError error) {
-                super.onError(error);
-            }
+        getWall(competition)
+            .subscribe(new Consumer<JsonObject>() {
+                @Override
+                public void accept(JsonObject jsonObject) throws Exception {
+                    Log.i(TAG1, jsonObject.toString());
+                }
+            }, new Consumer<Throwable>() {
+                @Override
+                public void accept(Throwable throwable) throws Exception {
+                    Log.i(TAG1, throwable.getLocalizedMessage());
+                }
+            });
 
-        });
+
+//        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
+//            @Override
+//            public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
+//                super.attemptFailed(request, attemptNumber, totalAttempts);
+//            }
+//
+//            @Override
+//            public void onProgress(VKRequest.VKProgressType progressType, long bytesLoaded, long bytesTotal) {
+//                super.onProgress(progressType, bytesLoaded, bytesTotal);
+//            }
+//
+//            @Override
+//            public void onComplete(VKResponse response) {
+//                super.onComplete(response);
+//                JsonParser jsonParser = new JsonParser();
+//                JsonObject jsonObject = (JsonObject) jsonParser.parse(response.responseString);
+//                JsonArray jsonArray = jsonObject.getAsJsonArray("response");
+//                jsonObject = (JsonObject) jsonArray.get(0);
+//                String text = jsonObject.get("text").getAsString();
+//                joinToGroup(VkUtil.getSponsorId(text));
+//                competition.setAction(text);
+//            }
+//
+//            @Override
+//            public void onError(VKError error) {
+//                super.onError(error);
+//            }
+//
+//        });
     }
 }

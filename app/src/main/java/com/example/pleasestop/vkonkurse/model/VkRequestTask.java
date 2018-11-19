@@ -64,7 +64,7 @@ public class VkRequestTask {
                     repository.joinToGroup(group_id);
                     break;
                 case TAG_SET_LIKE:
-                    repository.setLike(typeVkRequest, owner_id, item_id);
+                    repository.setLike(owner_id, item_id);
                     break;
                 case TAG_JOIN_TO_SPONSOR_GROUP:
                     repository.joinToSponsorGroup(competition);
