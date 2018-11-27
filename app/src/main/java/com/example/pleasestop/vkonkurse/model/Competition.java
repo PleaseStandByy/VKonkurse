@@ -4,9 +4,15 @@ import android.util.Pair;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public class Competition {
 
     public Competition(){}
+
+    private List<String> imageLinks;
+
+    private String text;
 
     private String winner;
 
@@ -24,6 +30,22 @@ public class Competition {
     private String action;
 
     private Pair<String, String> pairIdAndPostid;
+
+    public List<String> getImageLinks() {
+        return imageLinks;
+    }
+
+    public void setImageLinks(List<String> imageLinks) {
+        this.imageLinks = imageLinks;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
 
     public Pair<String, String> getPairIdAndPostid() {
         return pairIdAndPostid;

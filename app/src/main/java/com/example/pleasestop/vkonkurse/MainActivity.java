@@ -10,18 +10,19 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.pleasestop.vkonkurse.Fragments.CloseCompetitionFragment;
 import com.example.pleasestop.vkonkurse.Fragments.NewCompetitionFragments;
+import com.example.pleasestop.vkonkurse.Fragments.SettingsFragment;
+import com.example.pleasestop.vkonkurse.Utils.Constans;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKCallback;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKError;
-import com.vk.sdk.util.VKUtil;
 
 
 import javax.inject.Inject;
@@ -60,8 +61,9 @@ public class MainActivity extends AppCompatActivity {
             createFragment();
         }
 
-        tabLayout.addTab(tabLayout.newTab().setText("Активные"));
-        tabLayout.addTab(tabLayout.newTab().setText("Завершённые"));
+        tabLayout.addTab(tabLayout.newTab().setText("Конкурсы"));
+        tabLayout.addTab(tabLayout.newTab().setText("Победители"));
+        tabLayout.addTab(tabLayout.newTab().setText("Настройки"));
         tabLayout.setSelectedTabIndicatorColor(getResources().getColor(R.color.colorAccent));
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -70,11 +72,11 @@ public class MainActivity extends AppCompatActivity {
 
                 Fragment fragment = new NewCompetitionFragments();
 
-                /*if (tab.getPosition() == 0) {
-                    fragment = new ProjectInitiativesFragment();
-                } else  {
-                    fragment = new StartProjectFragment();
-                }*/
+                switch (tab.getPosition()){
+                    case 0 : fragment = new NewCompetitionFragments(); break;
+                    case 1 : fragment = new CloseCompetitionFragment(); break;
+                    case 2 : fragment = new SettingsFragment(); break;
+                }
 
                 FragmentManager fragmentManager = getSupportFragmentManager();
                 android.support.v4.app.FragmentTransaction transaction = fragmentManager.beginTransaction();

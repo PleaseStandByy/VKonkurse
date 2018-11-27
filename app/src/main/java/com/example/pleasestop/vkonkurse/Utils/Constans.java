@@ -1,7 +1,8 @@
-package com.example.pleasestop.vkonkurse;
+package com.example.pleasestop.vkonkurse.Utils;
 
 public class Constans {
 
+    public static final String VK_URL = "https://vk.com/";
     public static final String TOKEN = "token";
     public static final String USER_ID = "user_id";
     public static final String IS_AUTO = "isAuto";

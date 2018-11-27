@@ -4,23 +4,24 @@ import android.content.SharedPreferences;
 import android.util.Log;
 import android.util.Pair;
 
+import com.example.pleasestop.vkonkurse.Utils.Constans;
+import com.example.pleasestop.vkonkurse.Utils.VkUtil;
 import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 import com.example.pleasestop.vkonkurse.model.IsMemberResult;
 import com.example.pleasestop.vkonkurse.model.VkRequestTask;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.vk.sdk.VKSdk;
-import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
 
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +32,7 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 
@@ -63,6 +65,11 @@ public class Repository {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
+    public Observable<CompetitionsList<Competition>> loadNotActiveCompetitions(String vkUId) {
+        return apiService.loadNotActiveCompetitions(vkUId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
 
     public Observable<CompetitionsList<Competition>> loadAllCompetition(String vkUId, Integer delay) {
         return apiService.loadAllCompetition(vkUId)
@@ -82,15 +89,42 @@ public class Repository {
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation());
     }
-    public Observable<JsonObject> getWall(Competition competition) {
+    public Observable<JsonObject> getWall(final Competition competition) {
         Pair<String, String> pairIdAndPostid = VkUtil.getGroupAndPostIds(competition.getLink());
         String posts = "-" + pairIdAndPostid.first +
                 "_" + pairIdAndPostid.second;
-        return apiService.getWall(preferences.getString(Constans.TOKEN,""), VKSdk.getApiVersion(), posts)
+        String s1 = preferences.getString(Constans.TOKEN,"");
+        String s2 = VKSdk.getApiVersion();
+        return apiService.getWall(s1, s2, posts)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation());
     }
 
+    public Observable<Competition> getTextFromPost(final  Competition competition){
+        return getWall(competition)
+                .map(new Function<JsonObject, Competition>() {
+            @Override
+            public Competition apply(JsonObject jsonObject) throws Exception {
+                if(jsonObject != null)
+                    if(jsonObject.getAsJsonArray("response") != null)
+                        if(jsonObject.getAsJsonArray("response").size() > 0) {
+                            jsonObject = (JsonObject) jsonObject.getAsJsonArray("response").get(0);
+                            competition.setText(jsonObject.get("text").getAsString());
+                            competition.setImageLinks(new ArrayList<String>());
+                            try {
+                                JsonArray jsonArray = jsonObject.getAsJsonArray("attachments");
+                                for(JsonElement json : jsonArray ){
+                                    competition.getImageLinks().add(((JsonObject) json).get("photo").getAsJsonObject().get("photo_807").getAsString());
+                                }
+                            } catch (Exception e){
+
+                            }
+                        }
+                return competition;
+            }
+        });
+
+    }
     public void setLike(String ownerId, String itemId) {
         String str1 = preferences.getString(Constans.TOKEN,"");
         String str2 = VKSdk.getApiVersion();

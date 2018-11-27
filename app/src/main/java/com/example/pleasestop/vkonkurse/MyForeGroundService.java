@@ -12,11 +12,11 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.util.Pair;
 
+import com.example.pleasestop.vkonkurse.Utils.VkUtil;
 import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 import com.example.pleasestop.vkonkurse.model.IsMemberResult;
 import com.example.pleasestop.vkonkurse.model.VkRequestTask;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.vk.sdk.api.VKApiConst;
@@ -29,15 +29,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.SocketTimeoutException;
-import java.util.Observable;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
 import io.reactivex.Observer;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;

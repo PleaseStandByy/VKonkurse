@@ -1,4 +1,4 @@
-package com.example.pleasestop.vkonkurse;
+package com.example.pleasestop.vkonkurse.Utils;
 
 import android.util.Log;
 import android.util.Pair;
@@ -37,4 +37,6 @@ public class VkUtil {
         strings = stringForParse.split("СПОНСОРА");
         return strings[0].substring(0,strings[0].length()-1);
     }
+
+
 }

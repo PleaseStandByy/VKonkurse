@@ -2,10 +2,14 @@ package com.example.pleasestop.vkonkurse.presenters;
 
 import android.annotation.SuppressLint;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
 
 import com.arellomobile.mvp.InjectViewState;
 import com.arellomobile.mvp.MvpPresenter;
+import com.bumptech.glide.Glide;
 import com.example.pleasestop.vkonkurse.MyApp;
+import com.example.pleasestop.vkonkurse.R;
 import com.example.pleasestop.vkonkurse.Repository;
 import com.example.pleasestop.vkonkurse.ViewsMvp.NewCompetitionView;
 import com.example.pleasestop.vkonkurse.model.Competition;
@@ -20,10 +24,13 @@ import javax.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+
+import static com.example.pleasestop.vkonkurse.MyApp.getContext;
 
 @InjectViewState
 public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
@@ -32,7 +39,7 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     @Inject
     Repository repository;
 
-    public NewCompetitionPresenter(){
+    public NewCompetitionPresenter() {
         MyApp.getNetComponent().inject(this);
     }
 
@@ -40,12 +47,12 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     protected void onFirstViewAttach() {
         super.onFirstViewAttach();
         getViewState().showError("Список конкурсов пока пуст");
-//        loadNewCompetitions(0);
+        loadNewCompetitions(0);
     }
 
 
     @SuppressLint("CheckResult")
-    private void loadNewCompetitions(Integer delay){
+    public  void loadNewCompetitions(Integer delay) {
         getViewState().loading(true);
         repository.loadAllCompetition(repository.userID, delay)
                 .subscribe(new Consumer<CompetitionsList<Competition>>() {
@@ -57,8 +64,6 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                         competitionList = competitionCompetitionsList.getItems();
 
                         getWalls();
-                        getViewState().loading(false);
-                        getViewState().addList(competitionCompetitionsList.getItems());
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -69,16 +74,16 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                 });
     }
 
-    private void getWalls(){
+    private void getWalls() {
         Observable.fromIterable(competitionList)
                 .flatMap(new Function<Competition, ObservableSource<?>>() {
                     @Override
                     public ObservableSource<?> apply(Competition competition) throws Exception {
-                        return repository.getWall(competition);
+                        return repository.getTextFromPost(competition);
                     }
                 })
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<Object>() {
                     @Override
                     public void onSubscribe(Disposable d) {
@@ -88,6 +93,10 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                     @Override
                     public void onNext(Object o) {
                         Log.i("getWallJopa", "onNext: ");
+                        Competition competition = (Competition) o;
+                        if (competition.getText() == null) {
+                            competitionList.remove(competition);
+                        }
 
                     }
 
@@ -100,13 +109,21 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                     @Override
                     public void onComplete() {
                         Log.i("getWallJopa", "onComplete: ");
-
+                        getViewState().loading(false);
+                        getViewState().addList(competitionList);
                     }
                 });
-
-
-//        for(Competition competition : competitionList){
-//            repository.loadTextFromGroup(competition);
-//        }
     }
+
+    public void clearData(){
+        if(competitionList != null)
+            competitionList.clear();
+    }
+    public void loadImage(View view, String link) {
+        Glide.with(getContext())
+                .load(link)
+                .error(R.drawable.ic_close_white_24dp)
+                .into((ImageView) view);
+    }
+
 }

@@ -2,4 +2,6 @@
     <string name="app_name">ВКонкурсе</string>
     <string name="autorization">Авторизация</string>
     <string name="server">http://vkonkurse.herokuapp.com</string>
+    <string name="run_compitation">Учавствовать</string>
+    <string name="show_winner">Посмотреть победителя</string>
 </resources>

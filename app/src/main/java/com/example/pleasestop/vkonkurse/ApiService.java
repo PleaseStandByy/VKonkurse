@@ -15,6 +15,9 @@ public interface ApiService {
     @GET("/comp/get_active")
     Observable<CompetitionsList<Competition>> loadAllCompetition(@Query("vk_uid") String vkUId);
 
+    @GET("/comp/get_not_active")
+    Observable<CompetitionsList<Competition>> loadNotActiveCompetitions(@Query("vk_uid") String vkUId);
+
     @GET("/comp/get_active")
     Observable<CompetitionsList<Competition>> loadCompetitionAfterId(@Query("vk_uid") String vkUId, @Query("id") Integer id);
 
@@ -27,6 +30,10 @@ public interface ApiService {
 
     @GET("/comp/participation_done")
     Observable<JsonObject> participationDone(@Query("id") String id, @Query("vk_uid") String vkId);
+
+
+    /* запросы в вк */
+
 
     @GET("https://api.vk.com/method/wall.getById")
     Observable<JsonObject> getWall(@Query("access_token") String token,
