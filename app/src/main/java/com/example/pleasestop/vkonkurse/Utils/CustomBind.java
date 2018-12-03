@@ -21,6 +21,7 @@ public class CustomBind {
         if(link != null)
             Glide.with(getContext())
                     .load(link)
+                    .skipMemoryCache(true)
                     .error(R.drawable.ic_ab_app)
                     .into(new SimpleTarget<GlideDrawable>() {
                         @Override
@@ -42,5 +43,4 @@ public class CustomBind {
                         }
                     });
     }
-
 }

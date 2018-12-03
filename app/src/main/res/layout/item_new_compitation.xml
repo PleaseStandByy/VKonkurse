@@ -65,11 +65,21 @@
                 android:layout_height="1dp"
                 android:background="@android:color/darker_gray" />
 
-            <FrameLayout
+            <LinearLayout
+                android:id="@+id/layout_mini"
+                android:onClick="@{(v)->presenter.runCompetition(v,item)}"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
+                <ProgressBar
+                    android:id="@+id/progress_mini"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_margin="5dp"
+                    android:visibility="gone" />
+
                 <TextView
+                    android:id="@+id/text_view_run"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/compitation_margin"
@@ -78,7 +88,7 @@
                     android:text="@string/run_compitation"
                      />
 
-            </FrameLayout>
+            </LinearLayout>
 
         </LinearLayout>
 

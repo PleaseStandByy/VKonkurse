@@ -39,6 +39,7 @@ import io.reactivex.schedulers.Schedulers;
 public class Repository {
     public static final String TAG ="jopa";
     public static final String TAG1="jopa1";
+    public static final String TAG2="jopa2";
     @Inject
     ApiService apiService;
     @Inject
@@ -84,10 +85,16 @@ public class Repository {
                 .observeOn(Schedulers.computation());
     }
 
-    public Observable<JsonObject> participationDone(String id, String vkUid){
-        return apiService.participationDone(id, vkUid)
+    public void participationDone(final Competition competition, String vkUid){
+        apiService.participationDone(competition.getId().toString(), vkUid)
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation());
+                .observeOn(Schedulers.computation())
+                .subscribe(new Consumer<JsonObject>() {
+                    @Override
+                    public void accept(JsonObject jsonObject) throws Exception {
+                        competition.isClose = true;
+                    }
+                });
     }
     public Observable<JsonObject> getWall(final Competition competition) {
         Pair<String, String> pairIdAndPostid = VkUtil.getGroupAndPostIds(competition.getLink());
@@ -173,9 +180,32 @@ public class Repository {
                     }
                 });
     }
-    public Disposable joinToGroupttt(final String groupId){
+
+    public void joinToGroupSdksss(String groupId) {
+        apiService.joinToGroup(
+                preferences.getString(Constans.TOKEN,""),
+                VKSdk.getApiVersion(),
+                groupId
+        )
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .subscribe(new Consumer<JsonObject>() {
+                    @Override
+                    public void accept(JsonObject jsonObject) throws Exception {
+                        Log.i(TAG1, jsonObject.toString());
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.i(TAG1, throwable.toString());
+                    }
+                });
+    }
+
+
+    public void joinToGroupSdk(final String groupId){
         Log.i(TAG, "test run");
-        return Single.fromCallable(new Callable<Integer>() {
+        Single.fromCallable(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
                 Log.i(TAG, "test run end");
@@ -248,17 +278,18 @@ public class Repository {
 
     }
 
-    public void joinToSponsorGroup(Competition competition){
-        final String[] infoPost = new String[1];
-        String posts = "-+" + competition.getPairIdAndPostid().first +
-                "_" + competition.getPairIdAndPostid().second;
+    public void joinToSponsorGroup(Competition competition, final boolean isVkSdk){
         getWall(competition).subscribe(new Consumer<JsonObject>() {
             @Override
             public void accept(JsonObject jsonObject) throws Exception {
                 JsonArray jsonArray = jsonObject.getAsJsonArray("response");
                 jsonObject = (JsonObject) jsonArray.get(0);
                 String text = jsonObject.get("text").getAsString();
-                joinToGroup(VkUtil.getSponsorId(text));
+                if(isVkSdk){
+                    joinToGroupSdk(VkUtil.getSponsorId(text));
+                } else {
+                    joinToGroup(VkUtil.getSponsorId(text));
+                }
                 Log.i(TAG1, jsonObject.toString());
             }
         }, new Consumer<Throwable>() {
@@ -267,72 +298,5 @@ public class Repository {
                 Log.i(TAG1, throwable.getMessage());
             }
         });
-//        VKRequest request = new VKRequest("wall.getById", VKParameters.from("access_token", token, "posts", posts));
-//        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-//            @Override
-//            public void onComplete(VKResponse response) {
-//                super.onComplete(response);
-//                JsonParser jsonParser = new JsonParser();
-//                JsonObject jsonObject = (JsonObject) jsonParser.parse(response.responseString);
-//                JsonArray jsonArray = jsonObject.getAsJsonArray("response");
-//                jsonObject = (JsonObject) jsonArray.get(0);
-//                String text = jsonObject.get("text").getAsString();
-//                joinToGroup(VkUtil.getSponsorId(text));
-//                Log.i("jopa", infoPost[0].toString());
-//            }
-//
-//            @Override
-//            public void onError(VKError error) {
-//                super.onError(error);
-//            }
-//
-//        });
-    }
-
-    public void loadTextFromGroup(final Competition competition){
-
-        getWall(competition)
-            .subscribe(new Consumer<JsonObject>() {
-                @Override
-                public void accept(JsonObject jsonObject) throws Exception {
-                    Log.i(TAG1, jsonObject.toString());
-                }
-            }, new Consumer<Throwable>() {
-                @Override
-                public void accept(Throwable throwable) throws Exception {
-                    Log.i(TAG1, throwable.getLocalizedMessage());
-                }
-            });
-
-
-//        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-//            @Override
-//            public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
-//                super.attemptFailed(request, attemptNumber, totalAttempts);
-//            }
-//
-//            @Override
-//            public void onProgress(VKRequest.VKProgressType progressType, long bytesLoaded, long bytesTotal) {
-//                super.onProgress(progressType, bytesLoaded, bytesTotal);
-//            }
-//
-//            @Override
-//            public void onComplete(VKResponse response) {
-//                super.onComplete(response);
-//                JsonParser jsonParser = new JsonParser();
-//                JsonObject jsonObject = (JsonObject) jsonParser.parse(response.responseString);
-//                JsonArray jsonArray = jsonObject.getAsJsonArray("response");
-//                jsonObject = (JsonObject) jsonArray.get(0);
-//                String text = jsonObject.get("text").getAsString();
-//                joinToGroup(VkUtil.getSponsorId(text));
-//                competition.setAction(text);
-//            }
-//
-//            @Override
-//            public void onError(VKError error) {
-//                super.onError(error);
-//            }
-//
-//        });
     }
 }

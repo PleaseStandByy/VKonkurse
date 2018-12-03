@@ -50,7 +50,6 @@ public class MyForeGroundService extends Service {
     private Integer vkDelay;
     private Integer contestRequestDelay;
     private Integer contestListDelay;
-    private Integer countCompetitions;
 
     Disposable disposable;
     Disposable disposableWait;

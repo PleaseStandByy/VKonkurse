@@ -1,7 +1,10 @@
 package com.example.pleasestop.vkonkurse.model;
 
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
+import com.example.pleasestop.vkonkurse.R;
 import com.example.pleasestop.vkonkurse.Repository;
 
 
@@ -9,7 +12,10 @@ public class VkRequestTask {
 
     private static final String TAG_SET_LIKE = "setLike";
     private static final String TAG_JOIN_TO_GROUP = "joinToGroup";
+    private static final String TAG_JOIN_TO_GROUP_SDK = "joinToGroupSdk";
     private static final String TAG_JOIN_TO_SPONSOR_GROUP = "joinToSponsorGroup";
+    private static final String TAG_JOIN_TO_SPONSOR_GROUP_SDK = "joinToSponsorGroupSdk";
+    private static final String TAG_PARTICIPATION_DONE = "participationDone";
 
 
     private String idTask;
@@ -42,11 +48,31 @@ public class VkRequestTask {
         idTask = group_id;
     }
 
+    public void createJoinToGroupSdk(String group_id){
+        destructObject();
+        this.group_id = group_id;
+        tagVkRequest = TAG_JOIN_TO_GROUP_SDK;
+        idTask = group_id;
+    }
+
     public void createJoinToSponsorGroup(Competition competition){
         destructObject();
         this.competition = competition;
         tagVkRequest = TAG_JOIN_TO_SPONSOR_GROUP;
         idTask = competition.getLink();
+    }
+
+    public void createJoinToSponsorGroupSdk(Competition competition){
+        destructObject();
+        this.competition = competition;
+        tagVkRequest = TAG_JOIN_TO_SPONSOR_GROUP_SDK;
+        idTask = competition.getLink();
+    }
+
+    public void createparticipationDone(Competition competition){
+        destructObject();
+        this.competition = competition;
+        tagVkRequest = TAG_PARTICIPATION_DONE;
     }
 
     private void destructObject(){
@@ -67,7 +93,18 @@ public class VkRequestTask {
                     repository.setLike(owner_id, item_id);
                     break;
                 case TAG_JOIN_TO_SPONSOR_GROUP:
-                    repository.joinToSponsorGroup(competition);
+                    repository.joinToSponsorGroup(competition, false);
+                    break;
+                case TAG_JOIN_TO_SPONSOR_GROUP_SDK:
+                    repository.joinToSponsorGroup(competition, true);
+                    break;
+                case TAG_JOIN_TO_GROUP_SDK:
+                    repository.joinToGroupSdk(group_id);
+                    break;
+                case TAG_PARTICIPATION_DONE:
+                    repository.participationDone(competition, repository.userID);
+//                    competition.layout.findViewById(R.id.progress_mini).setVisibility(View.GONE);
+//                    ((TextView)competition.layout.findViewById(R.id.text_view_run)).setText("Учавствовать");
                     break;
             }
         } catch (Exception e) {

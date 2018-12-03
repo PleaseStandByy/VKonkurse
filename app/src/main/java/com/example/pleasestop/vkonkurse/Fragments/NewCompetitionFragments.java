@@ -11,6 +11,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -111,5 +112,19 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
         adapter.clear();
         presenter.clearData();
         presenter.loadNewCompetitions(0);
+    }
+
+    @Override
+    public void finishCompitition(View v, Competition competition) {
+        final LinearLayout layout = ((LinearLayout)v);
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                layout.findViewById(R.id.progress_mini).setVisibility(View.GONE);
+                ((TextView)layout.findViewById(R.id.text_view_run)).setText("Учавствовать");
+            }
+        });
+        adapter.remove(competition);
+        adapter.notifyDataSetChanged();
     }
 }
