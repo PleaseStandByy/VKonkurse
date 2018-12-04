@@ -5,10 +5,13 @@ import android.text.Layout;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
+import android.view.ViewParent;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.arellomobile.mvp.InjectViewState;
@@ -147,11 +150,12 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     }
 
     public void runCompetition(View v, Competition competition){
-        LinearLayout layout = ((LinearLayout)v);
+        Button button = (Button) v;
+        LinearLayout layout = (LinearLayout) button.getParent();
         layout.findViewById(R.id.progress_mini).setVisibility(View.VISIBLE);
-        ((TextView)layout.findViewById(R.id.text_view_run)).setText("Выполняются действия");
+        ((Button)layout.findViewById(R.id.buttonAutorization)).setText("Выполняются действия");
         competition.isClose = false;
-        checkLoad(competition, v);
+        checkLoad(competition, layout);
 //        competition.layout = layout;
         competition.runVkRequests(repository);
         chechUserIsMember(competition);
@@ -237,6 +241,7 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     }
 
     public void checkLoad(final Competition competition, final View v){
+
         Observable.just(competition)
                 .delay(1, TimeUnit.SECONDS)
                 .observeOn(Schedulers.newThread())

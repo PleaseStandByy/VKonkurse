@@ -16,17 +16,17 @@
 
 
     <android.support.v7.widget.CardView
-        tools:style="@style/CardView"
+        app:cardBackgroundColor="@color/vk_white"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:foreground="?android:attr/selectableItemBackground"
+        android:layout_margin="20dp"
         >
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
             android:minHeight="80dp"
             android:orientation="vertical">
 
@@ -56,21 +56,16 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/comic"
                 android:layout_margin="@dimen/compitation_margin"
                 android:text="@{item.text}"
                 />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@android:color/darker_gray" />
-
             <LinearLayout
-                android:id="@+id/layout_mini"
-                android:onClick="@{(v)->presenter.runCompetition(v,item)}"
+                android:id="@+id/main_button_autorization"
                 android:layout_width="match_parent"
+                android:layout_marginBottom="@dimen/compitation_margin"
                 android:layout_height="wrap_content">
-
                 <ProgressBar
                     android:id="@+id/progress_mini"
                     android:layout_width="wrap_content"
@@ -78,18 +73,22 @@
                     android:layout_margin="5dp"
                     android:visibility="gone" />
 
-                <TextView
-                    android:id="@+id/text_view_run"
+                <Button
+                    android:id="@+id/buttonAutorization"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/compitation_margin"
-                    android:textSize="@dimen/run_compitation_size"
-                    android:textColor="@color/vk_share_blue_color"
+                    android:layout_height="33dp"
+                    android:layout_marginTop="@dimen/compitation_margin"
+                    android:layout_marginStart="@dimen/compitation_margin"
+                    android:paddingStart="@dimen/margin_text_in_buttom"
+                    android:paddingEnd="@dimen/margin_text_in_buttom"
                     android:text="@string/run_compitation"
-                     />
+                    android:fontFamily="@font/comic"
+                    android:textAppearance="@style/vkonkurse_text_style_def"
+                    android:background="@drawable/oval_button"
+                    android:onClick="@{(v)->presenter.runCompetition(v,item)}"
+                    />
 
             </LinearLayout>
-
         </LinearLayout>
 
     </android.support.v7.widget.CardView>

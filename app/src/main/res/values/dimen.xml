@@ -4,5 +4,6 @@
 
     <dimen name="run_compitation_size">14dp</dimen>
     <dimen name="compitation_margin">12dp</dimen>
+    <dimen name="margin_text_in_buttom">22dp</dimen>
 
 </resources>

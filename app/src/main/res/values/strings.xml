@@ -6,4 +6,5 @@
     <string name="show_winner">Посмотреть победителя</string>
     <string name="list_is_empty">Список конкурсов пуст.</string>
     <string name="main_text_autorization">Все самые интересные конкурсы тут. Учавствуй и выигрывай призы!</string>
+    <string name="sign_in">Войти через</string>
 </resources>

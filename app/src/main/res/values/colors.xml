@@ -4,6 +4,8 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
     <color name="colorBackroundGray">#dad8d8</color>
-    <color name="tabLayoutColor">#bcb7b7</color>
+    <color name="tabLayoutColor">#d1cece</color>
+    <color name="yelow">#e49501</color>
+    <color name="color_toolbar_main">#FF03A0D1</color>
 
 </resources>

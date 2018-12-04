@@ -17,4 +17,17 @@
         </item>
     </style>
 
+    <style name="vkonkurse_text_style_def">
+        <item name="android:textSize">
+            16sp
+        </item>
+        <item name="android:textColor">
+            #FDFDFD
+        </item>
+    </style>
+
+
+    <style name="SwitchTheme" parent="Theme.AppCompat.Light">
+        <item name="android:colorControlActivated">#9b1525</item>
+    </style>
 </resources>

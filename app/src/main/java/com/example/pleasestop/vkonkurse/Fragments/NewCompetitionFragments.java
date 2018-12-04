@@ -11,6 +11,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -121,7 +122,7 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
             @Override
             public void run() {
                 layout.findViewById(R.id.progress_mini).setVisibility(View.GONE);
-                ((TextView)layout.findViewById(R.id.text_view_run)).setText("Учавствовать");
+                ((Button)layout.findViewById(R.id.buttonAutorization)).setText("типа Отменитб");
             }
         });
         adapter.remove(competition);
