@@ -22,6 +22,7 @@ import com.arellomobile.mvp.presenter.PresenterType;
 import com.arellomobile.mvp.presenter.ProvidePresenter;
 import com.example.pleasestop.vkonkurse.Adapters.MyAdapter;
 import com.example.pleasestop.vkonkurse.MyApp;
+import com.example.pleasestop.vkonkurse.Utils.Constans;
 import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.presenters.NewCompetitionPresenter;
 import com.example.pleasestop.vkonkurse.R;
@@ -34,6 +35,7 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import es.dmoral.toasty.Toasty;
 
 /**
  * Все новые конкурсы будут появляться здесь
@@ -87,9 +89,13 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
     }
 
     @Override
-    public void showError(String error) {
-        errorMessege.setVisibility(View.VISIBLE);
-        errorMessege.setText(error);
+    public void showMessage(String error, String type) {
+        switch (type){
+            case "error": Toasty.error(getActivity(),error).show();
+                break;
+            case "info": Toasty.info(getActivity(),error).show();
+                break;
+        }
     }
 
     @Override
@@ -110,22 +116,39 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
 
     @Override
     public void onRefresh() {
-        adapter.clear();
-        presenter.clearData();
-        presenter.loadNewCompetitions(0);
+        if(presenter.competitionIsloading()){
+            showMessage("Идёт загрузка конкурса. Подождите.", Constans.INFO_MESSAGE);
+            loading(false);
+        } else {
+            adapter.clear();
+            presenter.clearData();
+            presenter.loadNewCompetitions(0);
+        }
     }
 
     @Override
-    public void finishCompitition(View v, Competition competition) {
+    public void finishCompitition(View v, Competition competition, boolean closing) {
         final LinearLayout layout = ((LinearLayout)v);
+        competition.isLoading = false;
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 layout.findViewById(R.id.progress_mini).setVisibility(View.GONE);
-                ((Button)layout.findViewById(R.id.buttonAutorization)).setText("типа Отменитб");
+                if(closing)
+                    ((Button)layout.findViewById(R.id.buttonAutorization)).setText(getString(R.string.cancel_compitation));
+                else
+                    ((Button)layout.findViewById(R.id.buttonAutorization)).setText(getString(R.string.run_compitation));
             }
         });
+    }
+
+    @Override
+    public void removeItem(Competition competition) {
         adapter.remove(competition);
         adapter.notifyDataSetChanged();
+        presenter.competitionList.remove(competition);
+        if(adapter.getItems().isEmpty()){
+            showMessage("Список пуст. Скоро будут новые конкурсы.", Constans.INFO_MESSAGE);
+        }
     }
 }

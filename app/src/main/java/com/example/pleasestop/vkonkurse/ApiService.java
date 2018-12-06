@@ -52,4 +52,17 @@ public interface ApiService {
                                      @Query("owner_id") String ownerId,
                                      @Query("item_id") Integer itemId);
 
+    @GET("https://api.vk.com/method/likes.delete")
+    Observable<JsonObject> removeLike(@Query("access_token") String token,
+                                   @Query("v") String sdkVersion,
+                                   @Query("type") String type,
+                                   @Query("owner_id") String ownerId,
+                                   @Query("item_id") Integer itemId);
+
+    @GET("https://api.vk.com/method/groups.isMember")
+    Observable<JsonObject> isMember(@Query("access_token") String token,
+                                      @Query("v") String sdkVersion,
+                                      @Query("group_id") String groupId,
+                                      @Query("user_id") String userId,
+                                      @Query("extended") Integer extended);
 }

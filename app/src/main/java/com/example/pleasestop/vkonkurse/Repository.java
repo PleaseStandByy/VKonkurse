@@ -13,13 +13,18 @@ import com.example.pleasestop.vkonkurse.model.VkRequestTask;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -118,6 +123,7 @@ public class Repository {
                             jsonObject = (JsonObject) jsonObject.getAsJsonArray("response").get(0);
                             competition.setText(jsonObject.get("text").getAsString());
                             competition.setImageLinks(new ArrayList<String>());
+                            competition.setListSponsorGroupId(VkUtil.getSponsorId(jsonObject.get("text").getAsString()));
                             try {
                                 JsonArray jsonArray = jsonObject.getAsJsonArray("attachments");
                                 for(JsonElement json : jsonArray ){
@@ -160,6 +166,34 @@ public class Repository {
                 });
     }
 
+    public void removeLike(String ownerId, String itemId) {
+        String str1 = preferences.getString(Constans.TOKEN,"");
+        String str2 = VKSdk.getApiVersion();
+        String str3 = "post";
+        String str4 = "-" + ownerId;
+        Integer str5 = Integer.valueOf(itemId);
+        apiService.removeLike(
+                str1,
+                str2,
+                str3,
+                str4,
+                str5
+        )
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .subscribe(new Consumer<JsonObject>() {
+                    @Override
+                    public void accept(JsonObject jsonObject) throws Exception {
+                        Log.i(TAG1, jsonObject.toString());
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.i(TAG1, throwable.toString());
+                    }
+                });
+    }
+
     public void joinToGroup(String groupId) {
         apiService.joinToGroup(
                     preferences.getString(Constans.TOKEN,""),
@@ -181,23 +215,18 @@ public class Repository {
                 });
     }
 
-    public void joinToGroupSdksss(String groupId) {
-        apiService.joinToGroup(
-                preferences.getString(Constans.TOKEN,""),
+    public Observable<Integer> isMember(String groupId){
+        return apiService.isMember(preferences.getString(Constans.TOKEN,""),
                 VKSdk.getApiVersion(),
-                groupId
-        )
+                groupId,
+                userID,
+                1)
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-                .subscribe(new Consumer<JsonObject>() {
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(new Function<JsonObject, Integer>() {
                     @Override
-                    public void accept(JsonObject jsonObject) throws Exception {
-                        Log.i(TAG1, jsonObject.toString());
-                    }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.i(TAG1, throwable.toString());
+                    public Integer apply(JsonObject jsonObject) throws Exception {
+                        return jsonObject.get("response").getAsJsonObject().get("member").getAsInt();
                     }
                 });
     }
@@ -240,20 +269,21 @@ public class Repository {
             .subscribe();
     }
 
-    public Disposable setLike(final String type, final String owner_id, final String item_id){
-        return Single.fromCallable(new Callable() {
+    public void leaveToGroupSdk(final String groupId){
+        Log.i(TAG, "test run");
+        Single.fromCallable(new Callable<Integer>() {
             @Override
-            public Object call() throws Exception {
-                Log.i(TAG, "Ставиться лайк " + owner_id  + " " + item_id);
-                VKRequest request = new VKRequest("likes.add", VKParameters.from("access_token",
-                        token,"type",
-                        type, "owner_id", "-" + owner_id, "item_id",
-                        item_id));
+            public Integer call() throws Exception {
+                Log.i(TAG, "test run end");
+                Log.i(TAG, "Происходит подписка на группу " + groupId);
+                VKRequest request = new VKRequest("groups.leave", VKParameters.from("access_token", token ,"group_id", groupId));
+                final Integer[] resp = new Integer[1];
+                resp[0] = 0;
                 request.executeSyncWithListener(new VKRequest.VKRequestListener() {
                     @Override
                     public void onComplete(VKResponse response) {
                         super.onComplete(response);
-                        Log.i(TAG, "Лайк поставлен" + owner_id  + " " + item_id);
+                        Log.i(TAG, "ливнул с группы " + groupId);
                     }
 
                     @Override
@@ -264,31 +294,32 @@ public class Repository {
                     @Override
                     public void onError(VKError error) {
                         super.onError(error);
+                        Log.i(TAG, "onError: ");
                     }
 
                 });
-
-                Log.i("jopa", "opa");
-                return 0;
+                return resp[0];
             }
         })
                 .delay(vkDelay, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
                 .observeOn(Schedulers.newThread())
                 .subscribe();
-
     }
 
-    public void joinToSponsorGroup(Competition competition, final boolean isVkSdk){
+    public void joinToSponsorGroup(final Competition competition, final boolean isVkSdk){
         getWall(competition).subscribe(new Consumer<JsonObject>() {
             @Override
             public void accept(JsonObject jsonObject) throws Exception {
                 JsonArray jsonArray = jsonObject.getAsJsonArray("response");
                 jsonObject = (JsonObject) jsonArray.get(0);
                 String text = jsonObject.get("text").getAsString();
+                competition.setListSponsorGroupId(VkUtil.getSponsorId(text));
                 if(isVkSdk){
-                    joinToGroupSdk(VkUtil.getSponsorId(text));
+                    for(String id : competition.getListSponsorGroupId())
+                        joinToGroupSdk(id);
                 } else {
-                    joinToGroup(VkUtil.getSponsorId(text));
+                    for(String id : competition.getListSponsorGroupId())
+                        Observable.just(id).delay(1,TimeUnit.SECONDS).subscribe((v) -> joinToGroup(v));
                 }
                 Log.i(TAG1, jsonObject.toString());
             }
@@ -299,4 +330,41 @@ public class Repository {
             }
         });
     }
+
+
+    public void canselCompetition(Competition competition){
+        String str1 = preferences.getString(Constans.TOKEN, "");
+        String str2 = VKSdk.getApiVersion();
+        String str3 = "post";
+        String str4 = "-" + competition.getPairIdAndPostid().first;
+        Integer str5 = Integer.valueOf(
+                competition.getPairIdAndPostid().second);
+        apiService.removeLike(
+                str1,
+                str2,
+                str3,
+                str4,
+                str5
+        )
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .subscribe(new Consumer<JsonObject>() {
+                    @Override
+                    public void accept(JsonObject jsonObject) throws Exception {
+                        Log.i(TAG1, jsonObject.toString());
+                        for (String idGroup : competition.getListSponsorGroupId()) {
+                            leaveToGroupSdk(idGroup);
+                        }
+                        competition.isClose = false;
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.i(TAG1, throwable.toString());
+                    }
+                });
+
+    }
+
+
 }

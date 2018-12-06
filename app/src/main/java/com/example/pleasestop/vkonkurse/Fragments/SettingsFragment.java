@@ -22,6 +22,7 @@ import javax.inject.Inject;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnCheckedChanged;
+import es.dmoral.toasty.Toasty;
 
 public class SettingsFragment extends MvpAppCompatFragment {
 
@@ -53,6 +54,7 @@ public class SettingsFragment extends MvpAppCompatFragment {
     }
 
     public void startService(){
+        Toasty.info(getActivity(),"Автоучастие будет работать так же после закрытия приложения.").show();
         stopService();
         String input = "test";
         Intent serviceIntent = new Intent(getActivity(), MyForeGroundService.class);

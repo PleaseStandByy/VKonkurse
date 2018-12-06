@@ -8,16 +8,14 @@ import android.util.Log;
 import com.arellomobile.mvp.InjectViewState;
 import com.arellomobile.mvp.MvpPresenter;
 import com.example.pleasestop.vkonkurse.MyApp;
+import com.example.pleasestop.vkonkurse.R;
 import com.example.pleasestop.vkonkurse.Repository;
 import com.example.pleasestop.vkonkurse.Utils.Constans;
 import com.example.pleasestop.vkonkurse.ViewsMvp.CloseCompetitionView;
-import com.example.pleasestop.vkonkurse.ViewsMvp.NewCompetitionView;
 import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.inject.Inject;
 
@@ -29,6 +27,8 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+
+import static com.example.pleasestop.vkonkurse.Utils.Constans.INFO_MESSAGE;
 
 @InjectViewState
 public class CloseCompetitionPresenter extends MvpPresenter<CloseCompetitionView> {
@@ -44,7 +44,7 @@ public class CloseCompetitionPresenter extends MvpPresenter<CloseCompetitionView
     @Override
     protected void onFirstViewAttach() {
         super.onFirstViewAttach();
-        getViewState().showError("Список конкурсов пока пуст");
+//        getViewState().showMessage("Список конкурсов пока пуст", Constans.INFO_MESSAGE);
         loadCompetitions(0);
     }
 
@@ -60,13 +60,18 @@ public class CloseCompetitionPresenter extends MvpPresenter<CloseCompetitionView
                         repository.contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
                         repository.vkDelay = competitionCompetitionsList.getVkDelay();
                         competitionList = new CopyOnWriteArrayList<>(competitionCompetitionsList.getItems());
-                        getWalls();
+                        if(competitionList.isEmpty()){
+                            getViewState().loading(false);
+                            getViewState().showMessage(MyApp.getContext().getResources().getString(R.string.list_is_empty), INFO_MESSAGE);
+                        } else {
+                            getWalls();
+                        }
                     }
                 }, new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
                         getViewState().loading(false);
-                        getViewState().showError(throwable.getMessage());
+                        getViewState().showMessage(throwable.getMessage(), Constans.ERROR_MESSAGE);
                     }
                 });
     }

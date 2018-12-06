@@ -3,6 +3,9 @@ package com.example.pleasestop.vkonkurse.Utils;
 import android.util.Log;
 import android.util.Pair;
 
+import com.example.pleasestop.vkonkurse.MyApp;
+import com.example.pleasestop.vkonkurse.R;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -31,12 +34,25 @@ public class VkUtil {
         return pair;
     }
 
-    public static String getSponsorId(String stringForParse){
+    public static List<String> getSponsorId(String stringForParse){
         String[] strings = stringForParse.split("club");
-        stringForParse = strings[1];
-        strings = stringForParse.split("СПОНСОРА");
-        return strings[0].substring(0,strings[0].length()-1);
+
+        List<String> listId = new ArrayList<>();
+        for(int i = 1; i<strings.length; i++){
+            listId.add(customSplit(strings[i], '|'));
+        }
+
+        return listId;
     }
 
-
+    private static String customSplit(String text, char splitSymbol) {
+        String resultText = "";
+        for(char symbol : text.toCharArray()){
+            if(symbol != splitSymbol){
+                resultText += symbol;
+            } else
+                break;
+        }
+        return resultText;
+    }
 }

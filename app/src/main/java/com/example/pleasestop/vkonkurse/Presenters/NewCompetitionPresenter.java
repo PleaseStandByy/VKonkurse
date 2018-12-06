@@ -1,22 +1,14 @@
 package com.example.pleasestop.vkonkurse.presenters;
 
 import android.annotation.SuppressLint;
-import android.text.Layout;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
-import android.view.ViewParent;
 import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import com.arellomobile.mvp.InjectViewState;
 import com.arellomobile.mvp.MvpPresenter;
-import com.bumptech.glide.Glide;
 import com.example.pleasestop.vkonkurse.MyApp;
 import com.example.pleasestop.vkonkurse.R;
 import com.example.pleasestop.vkonkurse.Repository;
@@ -26,6 +18,7 @@ import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 import com.example.pleasestop.vkonkurse.model.IsMemberResult;
 import com.example.pleasestop.vkonkurse.model.VkRequestTask;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.vk.sdk.api.VKApiConst;
@@ -39,13 +32,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import butterknife.BindView;
+import es.dmoral.toasty.Toasty;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
@@ -55,13 +46,14 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-import static com.example.pleasestop.vkonkurse.MyApp.getContext;
 import static com.example.pleasestop.vkonkurse.Repository.TAG;
+import static com.example.pleasestop.vkonkurse.Utils.Constans.ERROR_MESSAGE;
+import static com.example.pleasestop.vkonkurse.Utils.Constans.INFO_MESSAGE;
 
 @InjectViewState
 public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
 
-    List<Competition> competitionList;
+    public List<Competition> competitionList;
     @Inject
     Repository repository;
 
@@ -72,7 +64,6 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     @Override
     protected void onFirstViewAttach() {
         super.onFirstViewAttach();
-        getViewState().showError("Список конкурсов пока пуст");
         loadNewCompetitions(0);
     }
 
@@ -88,9 +79,11 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                         repository.contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
                         repository.vkDelay = competitionCompetitionsList.getVkDelay();
                         competitionList = competitionCompetitionsList.getItems();
+                        for(Competition competition : competitionList)
+                            competition.isLoading = false;
                         if(competitionList.isEmpty()){
                             getViewState().loading(false);
-                            getViewState().showError(MyApp.getContext().getResources().getString(R.string.list_is_empty));
+                            getViewState().showMessage(MyApp.getContext().getResources().getString(R.string.list_is_empty), INFO_MESSAGE);
                         } else
                             getWalls();
                     }
@@ -98,7 +91,7 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
                         getViewState().loading(false);
-                        getViewState().showError(throwable.getMessage());
+                        getViewState().showMessage(throwable.getMessage(), ERROR_MESSAGE);
                     }
                 });
     }
@@ -144,6 +137,19 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                 });
     }
 
+    public Boolean competitionIsloading(){
+        try {
+            if(competitionList == null)
+                return false;
+            for(Competition competition : competitionList){
+                if(competition.isLoading)
+                    return true;
+            }
+        } catch (Exception e){
+            return true;
+        }
+        return false;
+    }
     public void clearData(){
         if(competitionList != null)
             competitionList.clear();
@@ -152,13 +158,64 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     public void runCompetition(View v, Competition competition){
         Button button = (Button) v;
         LinearLayout layout = (LinearLayout) button.getParent();
-        layout.findViewById(R.id.progress_mini).setVisibility(View.VISIBLE);
-        ((Button)layout.findViewById(R.id.buttonAutorization)).setText("Выполняются действия");
-        competition.isClose = false;
-        checkLoad(competition, layout);
-//        competition.layout = layout;
-        competition.runVkRequests(repository);
-        chechUserIsMember(competition);
+
+        final Boolean[] isMember = {true};
+
+        if(button.getText().equals(MyApp.getContext().getResources().getString(R.string.run_compitation))) {
+            competition.isLoading = true;
+            Observable.fromIterable(competition.getListSponsorGroupId())
+                    .flatMap(new Function<String, ObservableSource<?>>() {
+                        @Override
+                        public ObservableSource<?> apply(String s) throws Exception {
+                           return repository.isMember(s);
+                        }
+                    }).subscribe(new Observer<Object>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+
+                        }
+
+                        @Override
+                        public void onNext(Object o) {
+                            if((Integer)o == 0)
+                                isMember[0] = false;
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+
+                        }
+
+                        @Override
+                        public void onComplete() {
+                            if(!isMember[0]) {
+                                layout.findViewById(R.id.progress_mini).setVisibility(View.VISIBLE);
+                                ((Button)layout.findViewById(R.id.buttonAutorization)).setText("Выполняются действия");
+                                competition.isClose = false;
+                                checkLoad(competition, layout);
+                                competition.runVkRequests(repository);
+                                chechUserIsMember(competition);
+                            } else {
+                                getViewState().showMessage("Вы уже учавствуете в этом конкурсе", INFO_MESSAGE);
+                                getViewState().removeItem(competition);
+                            }
+                        }
+
+            });
+        } else
+            if(button.getText().equals(MyApp.getContext().getResources().getString(R.string.cancel_compitation))) {
+                competition.isLoading = true;
+                layout.findViewById(R.id.progress_mini).setVisibility(View.VISIBLE);
+                ((Button)layout.findViewById(R.id.buttonAutorization)).setText("Выполняются действия");
+                checkLoadForCancel(competition, layout);
+                try {
+                    repository.canselCompetition(competition);
+                } catch (Exception e) {
+                    getViewState().showMessage("Конкурс больше не активен.", INFO_MESSAGE);
+                    getViewState().removeItem(competition);
+                }
+            }
+
     }
 
 
@@ -241,7 +298,6 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     }
 
     public void checkLoad(final Competition competition, final View v){
-
         Observable.just(competition)
                 .delay(1, TimeUnit.SECONDS)
                 .observeOn(Schedulers.newThread())
@@ -250,49 +306,31 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                     @Override
                     public void accept(Competition comp) throws Exception {
                         if(competition.isClose){
-                            getViewState().finishCompitition(v,competition);
+                            getViewState().finishCompitition(v,competition, true);
                         } else {
                             checkLoad(competition,v);
                         }
                     }
                 });
     }
-//    public void runVkRequests(final Competition competition){
-//        if (competition.getVkRequestTasks() == null)
-//            competition.setVkRequestTasks(new ConcurrentLinkedQueue<VkRequestTask>());
-//        if (competition.getVkRequestTaskIds() == null)
-//            competition.setVkRequestTaskIds(new CopyOnWriteArraySet<String>());
-//        if(competition.getVkRequestTasks().peek() != null) {
-//            io.reactivex.Observable.just(competition.getVkRequestTasks().poll())
-//                    .delay(1, TimeUnit.SECONDS)
-//                    .observeOn(Schedulers.newThread())
-//                    .subscribeOn(Schedulers.newThread())
-//                    .subscribe(new Consumer<VkRequestTask>() {
-//                        @Override
-//                        public void accept(VkRequestTask task) throws Exception {
-//                            task.run(repository);
-//                            competition.getVkRequestTaskIds().remove(task.getIdTask());
-//                            runVkRequests(competition);
-//                        }
-//                    }, new Consumer<Throwable>() {
-//                        @Override
-//                        public void accept(Throwable throwable) throws Exception {
-//                            Log.i(TAG, "accept: ");
-//                        }
-//                    });
-//        } else {
-//            io.reactivex.Observable.just(1)
-//                    .delay(1, TimeUnit.SECONDS)
-//                    .observeOn(Schedulers.newThread())
-//                    .subscribeOn(Schedulers.newThread())
-//                    .subscribe(new Consumer<Integer>() {
-//                        @Override
-//                        public void accept(Integer integer) throws Exception {
-//                            runVkRequests(competition);
-//                        }
-//                    });
-//        }
-//    }
+
+    public void checkLoadForCancel(final Competition competition, final View v ){
+        Observable.just(competition)
+                .delay(1, TimeUnit.SECONDS)
+                .observeOn(Schedulers.newThread())
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Competition>() {
+                   @Override
+                   public void accept(Competition comp) throws Exception {
+                       if (!competition.isClose) {
+                           getViewState().finishCompitition(v, competition, false);
+                       } else {
+                           checkLoadForCancel(competition, v);
+                       }
+                }
+        });
+    }
+
     public void joinToGroup(Competition competition) {
         VkRequestTask task = new VkRequestTask();
         task.createJoinToGroupSdk(competition.getPairIdAndPostid().first);
@@ -316,6 +354,20 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
         task.createSetLike("post",
                 competition.getPairIdAndPostid().first,
                 competition.getPairIdAndPostid().second);
+        checkTask(task, competition);
+    }
+
+    public void removeLike(Competition competition) {
+        VkRequestTask task = new VkRequestTask();
+        task.createSetLike("post",
+                competition.getPairIdAndPostid().first,
+                competition.getPairIdAndPostid().second);
+        checkTask(task, competition);
+    }
+
+    public void leaveFromGroup(Competition competition) {
+        VkRequestTask task = new VkRequestTask();
+        task.createJoinToGroupSdk(competition.getPairIdAndPostid().first);
         checkTask(task, competition);
     }
 

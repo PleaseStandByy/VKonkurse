@@ -70,7 +70,8 @@
                     android:id="@+id/progress_mini"
                     android:layout_width="wrap_content"
                     android:layout_height="34dp"
-                    android:layout_margin="5dp"
+                    android:layout_marginTop="@dimen/compitation_margin"
+                    android:layout_marginStart="@dimen/compitation_margin"
                     android:visibility="gone" />
 
                 <Button

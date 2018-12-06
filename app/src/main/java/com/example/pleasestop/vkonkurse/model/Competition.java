@@ -2,7 +2,6 @@ package com.example.pleasestop.vkonkurse.model;
 
 import android.util.Log;
 import android.util.Pair;
-import android.widget.LinearLayout;
 
 import com.example.pleasestop.vkonkurse.Repository;
 import com.google.gson.annotations.SerializedName;
@@ -20,7 +19,11 @@ import static com.example.pleasestop.vkonkurse.Repository.TAG;
 
 public class Competition {
 
+    public Competition(){}
+
     public Boolean isClose;
+
+    public Boolean isLoading;
 
     Disposable disposable;
 
@@ -28,7 +31,7 @@ public class Competition {
 
     CopyOnWriteArraySet<String> vkRequestTaskIds;
 
-    public Competition(){}
+    private List<String> listSponsorGroupId;
 
     private List<String> imageLinks;
 
@@ -50,6 +53,14 @@ public class Competition {
     private String action;
 
     private Pair<String, String> pairIdAndPostid;
+
+    public List<String> getListSponsorGroupId() {
+        return listSponsorGroupId;
+    }
+
+    public void setListSponsorGroupId(List<String> listSponsorGroupId) {
+        this.listSponsorGroupId = listSponsorGroupId;
+    }
 
     public ConcurrentLinkedQueue<VkRequestTask> getVkRequestTasks() {
         return vkRequestTasks;

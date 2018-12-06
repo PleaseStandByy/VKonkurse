@@ -35,6 +35,7 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import es.dmoral.toasty.Toasty;
 
 /**
  * Все завершенные конкурсы будут появляться здесь
@@ -95,9 +96,13 @@ public class CloseCompetitionFragment extends MvpAppCompatFragment implements Cl
     }
 
     @Override
-    public void showError(String error) {
-        errorMessege.setVisibility(View.VISIBLE);
-        errorMessege.setText(error);
+    public void showMessage(String error, String type) {
+        switch (type){
+            case "error": Toasty.error(getActivity(),error).show();
+                break;
+            case "info": Toasty.info(getActivity(),error).show();
+                break;
+        }
     }
 
     @Override

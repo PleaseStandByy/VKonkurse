@@ -166,7 +166,7 @@ public class MyForeGroundService extends Service {
                 }, new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
-//                        showError(throwable.getMessage());
+//                        showMessage(throwable.getMessage());
                         Log.i(TAG, "acceptCheckResolution: " + throwable.toString());
                         checkResolution(competition, isMember, contestListDelay);
                     }
