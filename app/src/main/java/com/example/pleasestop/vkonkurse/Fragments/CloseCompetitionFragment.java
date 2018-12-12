@@ -78,7 +78,7 @@ public class CloseCompetitionFragment extends MvpAppCompatFragment implements Cl
         list.setLayoutManager(linearLayoutManager);
         list.setHasFixedSize(true);
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(list.getContext(), linearLayoutManager.getOrientation());
-        list.addItemDecoration(dividerItemDecoration);
+//        list.addItemDecoration(dividerItemDecoration);
         adapter = new MyAdapter<>(R.layout.item_close_competition, presenter);
         list.setAdapter(adapter);
         swipe.setOnRefreshListener(this);

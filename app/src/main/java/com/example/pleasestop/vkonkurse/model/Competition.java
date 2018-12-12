@@ -3,6 +3,8 @@ package com.example.pleasestop.vkonkurse.model;
 import android.util.Log;
 import android.util.Pair;
 
+import com.example.pleasestop.vkonkurse.MyApp;
+import com.example.pleasestop.vkonkurse.R;
 import com.example.pleasestop.vkonkurse.Repository;
 import com.google.gson.annotations.SerializedName;
 
@@ -19,6 +21,9 @@ import static com.example.pleasestop.vkonkurse.Repository.TAG;
 
 public class Competition {
 
+    public String getTextDone(){
+        return MyApp.getContext().getResources().getString(R.string.run_compitation);
+    }
     public Competition(){}
 
     public Boolean isClose;

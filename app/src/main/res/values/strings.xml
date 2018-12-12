@@ -9,4 +9,6 @@
     <string name="main_text_autorization">Все самые интересные конкурсы тут. Учавствуй и выигрывай призы!</string>
     <string name="sign_in">Войти через</string>
     <string name="split_symbol">|</string>
+    <string name="auto_load">Автоучастие</string>
+    <string name="content_text_notification">Нажмите, чтобы открыть приложение</string>
 </resources>

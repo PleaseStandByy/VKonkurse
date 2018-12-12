@@ -1,16 +1,12 @@
 package com.example.pleasestop.vkonkurse.Utils;
 
-import android.util.Log;
 import android.util.Pair;
+import android.widget.ProgressBar;
 
-import com.example.pleasestop.vkonkurse.MyApp;
-import com.example.pleasestop.vkonkurse.R;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
-import static com.example.pleasestop.vkonkurse.MainActivity.TAG;
 
 public class VkUtil {
 
@@ -54,5 +50,25 @@ public class VkUtil {
                 break;
         }
         return resultText;
+    }
+
+    public static String removeTextFromTwoSymbols(char firsSymbol, char secondSymbol, String text){
+        StringBuilder stringBuilder = new StringBuilder();
+        for(int i = 0; i < text.length(); i++){
+            if (text.charAt(i) == firsSymbol){
+                while (true) {
+                    if (text.charAt(i) == secondSymbol) {
+                        break;
+                    }
+                    if(i<text.length())
+                        i++;
+                    else
+                        break;
+                }
+            } else {
+                stringBuilder.append(text.charAt(i));
+            }
+        }
+        return stringBuilder.toString();
     }
 }

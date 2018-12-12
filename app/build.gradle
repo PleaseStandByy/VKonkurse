@@ -1,5 +1,20 @@
+buildscript {
+    repositories {
+        maven { url 'https://maven.fabric.io/public' }
+    }
+
+    dependencies {
+        classpath 'io.fabric.tools:gradle:1.+'
+    }
+}
 //noinspection GradleCompatible
 apply plugin: 'com.android.application'
+apply plugin: 'io.fabric'
+
+repositories {
+    maven { url 'https://maven.fabric.io/public' }
+}
+
 
 android {
     signingConfigs {
@@ -86,4 +101,7 @@ dependencies {
     compile "com.davemorrissey.labs:subsampling-scale-image-view:$imageview"
 
     //    annotationProcessor "com.android.databinding:compiler:$databinding"
+    compile('com.crashlytics.sdk.android:crashlytics:2.9.7@aar') {
+        transitive = true;
+    }
 }

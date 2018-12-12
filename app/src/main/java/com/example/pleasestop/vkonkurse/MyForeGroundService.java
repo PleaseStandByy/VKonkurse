@@ -93,9 +93,9 @@ public class MyForeGroundService extends Service {
                 0, notificationIntent, 0);
 
         notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Example Service")
-                .setContentText(input)
-                .setSmallIcon(R.drawable.ic_ab_app)
+                .setContentTitle(this.getString(R.string.auto_load))
+                .setContentText(this.getString(R.string.content_text_notification))
+                .setSmallIcon(R.drawable.ic_main_icon)
                 .setContentIntent(pendingIntent)
                 .build();
 
@@ -275,10 +275,10 @@ public class MyForeGroundService extends Service {
     }
 
     public void showError(String error) {
-        Notification notification = getMyActivityNotification(error);
-
-        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(1, notification);
+//        Notification notification = getMyActivityNotification(error);
+//
+//        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+//        mNotificationManager.notify(1, notification);
     }
     @Override
     public void onDestroy() {

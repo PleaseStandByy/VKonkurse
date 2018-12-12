@@ -12,12 +12,15 @@ import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
 import com.example.pleasestop.vkonkurse.Fragments.CloseCompetitionFragment;
 import com.example.pleasestop.vkonkurse.Fragments.NewCompetitionFragments;
 import com.example.pleasestop.vkonkurse.Fragments.SettingsFragment;
@@ -53,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     TabLayout tabLayout;
     @BindView(R.id.toolbar)
     Toolbar appBar;
+    @BindView(R.id.background_image)
+    ImageView backgroundView;
     /**
      * temp
      */
@@ -64,7 +69,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         MyApp.getNetComponent().inject(this);
-
+        Crashlytics.log(Log.ERROR, "YourTAG", "YourMessage aaaaaa");
+        Crashlytics.logException(new Throwable("YourERROR - Start prog"));
         String token = preferences.getString(Constans.TOKEN, "");
         if(!token.equals("")){
             createFragment();
@@ -119,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
                 preferences.edit().putString(Constans.USER_ID,res.userId).commit();
                 preferences.edit().putString(Constans.TOKEN,res.accessToken).commit();
                 createFragment();
-                Toast.makeText(getApplicationContext(), "norm", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(getApplicationContext(), "norm", Toast.LENGTH_SHORT).show();
             }
             @Override
             public void onError(VKError error) {
@@ -141,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
     private void createFragment(){
         tabLayout.setVisibility(View.VISIBLE);
         appBar.setVisibility(View.VISIBLE);
+        backgroundView.setImageDrawable(getDrawable(R.drawable.background_list));
         repository.userID = preferences.getString(Constans.USER_ID, "");
         repository.token = preferences.getString(Constans.TOKEN, "");
         NewCompetitionFragments fragment = new NewCompetitionFragments();

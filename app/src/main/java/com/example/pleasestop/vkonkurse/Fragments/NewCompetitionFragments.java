@@ -76,7 +76,7 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
         list.setLayoutManager(linearLayoutManager);
         list.setHasFixedSize(true);
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(list.getContext(), linearLayoutManager.getOrientation());
-        list.addItemDecoration(dividerItemDecoration);
+//        list.addItemDecoration(dividerItemDecoration);
         adapter = new MyAdapter<>(R.layout.item_new_compitation, presenter);
         list.setAdapter(adapter);
         swipe.setOnRefreshListener(this);

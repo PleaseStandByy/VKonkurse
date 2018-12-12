@@ -7,12 +7,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
+import com.crashlytics.android.Crashlytics;
 import com.example.pleasestop.vkonkurse.Modules.AppModule;
 import com.example.pleasestop.vkonkurse.Modules.NetModule;
 import com.example.pleasestop.vkonkurse.Modules.RepositoryModule;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKAccessTokenTracker;
 import com.vk.sdk.VKSdk;
+import io.fabric.sdk.android.Fabric;
 
 public class MyApp extends Application {
 
@@ -34,6 +36,7 @@ public class MyApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
         mNetComponent = DaggerNetComponent.builder()
                 .repositoryModule(new RepositoryModule())
                 .appModule(new AppModule(this))

@@ -121,7 +121,9 @@ public class Repository {
                     if(jsonObject.getAsJsonArray("response") != null)
                         if(jsonObject.getAsJsonArray("response").size() > 0) {
                             jsonObject = (JsonObject) jsonObject.getAsJsonArray("response").get(0);
-                            competition.setText(jsonObject.get("text").getAsString());
+                            String text = VkUtil.removeTextFromTwoSymbols('[','|', jsonObject.get("text").getAsString());
+                            text = text.replace("]","");
+                            competition.setText(text);
                             competition.setImageLinks(new ArrayList<String>());
                             competition.setListSponsorGroupId(VkUtil.getSponsorId(jsonObject.get("text").getAsString()));
                             try {

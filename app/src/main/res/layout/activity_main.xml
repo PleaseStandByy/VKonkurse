@@ -5,23 +5,41 @@
 <RelativeLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/___"
     android:theme="@android:style/Theme.Black.NoTitleBar"
     tools:context=".MainActivity">
 
+    <ImageView
+        android:id="@+id/background_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/___"
+        android:scaleType="centerCrop"
+        />
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         android:minHeight="?attr/actionBarSize"
         android:visibility="gone">
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
         <View
             android:layout_width="139.19dp"
             android:layout_height="55.33dp"
-            android:layout_centerInParent="true"
+            android:layout_alignParentLeft="true"
             android:layout_marginTop="3dp"
             android:background="@drawable/ic_main_title"
             />
+        <View
+            android:layout_width="123dp"
+            android:layout_height="55.33dp"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="3dp"
+            android:background="@drawable/balls_app_bar"
+            />
+        </RelativeLayout>
+
     </android.support.v7.widget.Toolbar>
 
     <android.support.design.widget.TabLayout
@@ -48,6 +66,7 @@
         android:id="@+id/main_info_layout"
         android:orientation="vertical"
         android:layout_width="wrap_content"
+        android:visibility="visible"
         android:layout_height="wrap_content">
         <RelativeLayout
             android:id="@+id/main_title"
