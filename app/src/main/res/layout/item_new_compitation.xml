@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/comic"
                 android:layout_margin="@dimen/compitation_margin"
-                android:text="@{item.text}"
+                app:spannableText="@{item}"
                 />
 
             <LinearLayout

@@ -1,6 +1,7 @@
 package com.example.pleasestop.vkonkurse.ViewsMvp;
 
 
+import android.content.Intent;
 import android.view.View;
 
 import com.arellomobile.mvp.viewstate.strategy.SkipStrategy;
@@ -14,4 +15,9 @@ public interface NewCompetitionView extends MyMvpView {
 
     @StateStrategyType(SkipStrategy.class)
     void removeItem(Competition competition);
+
+
+    @StateStrategyType(SkipStrategy.class)
+    void openSponsorGroup(Intent i);
+
 }

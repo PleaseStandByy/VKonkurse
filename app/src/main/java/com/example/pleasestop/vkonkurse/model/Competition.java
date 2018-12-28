@@ -1,5 +1,6 @@
 package com.example.pleasestop.vkonkurse.model;
 
+import android.text.SpannableString;
 import android.util.Log;
 import android.util.Pair;
 
@@ -25,6 +26,8 @@ public class Competition {
         return MyApp.getContext().getResources().getString(R.string.run_compitation);
     }
     public Competition(){}
+
+    private SpannableString spanText;
 
     public Boolean isClose;
 
@@ -58,6 +61,14 @@ public class Competition {
     private String action;
 
     private Pair<String, String> pairIdAndPostid;
+
+    public SpannableString getSpanText() {
+        return spanText;
+    }
+
+    public void setSpanText(SpannableString spanText) {
+        this.spanText = spanText;
+    }
 
     public List<String> getListSponsorGroupId() {
         return listSponsorGroupId;

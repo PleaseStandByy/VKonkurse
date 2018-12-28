@@ -2,19 +2,30 @@ package com.example.pleasestop.vkonkurse.Utils;
 
 import android.databinding.BindingAdapter;
 import android.graphics.drawable.Drawable;
+import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.example.pleasestop.vkonkurse.R;
+import com.example.pleasestop.vkonkurse.model.Competition;
 
 import static com.example.pleasestop.vkonkurse.MyApp.getContext;
 
 public class CustomBind {
+
+
+
+    @BindingAdapter("bind:spannableText")
+    public static void setSpannableText(final TextView textView, final Competition item) {
+        textView.setText(item.getSpanText());
+        textView.setMovementMethod(LinkMovementMethod.getInstance());
+    }
 
     @BindingAdapter(value = {"bind:setImage", "bind:progress"}, requireAll = false)
     public static void setIcon (final ImageView imageView, String link, final ProgressBar progressBar) {

@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-import com.crashlytics.android.Crashlytics;
-
 
 public class BootCompletedIntentReceiver extends BroadcastReceiver {
 
@@ -16,9 +14,9 @@ public class BootCompletedIntentReceiver extends BroadcastReceiver {
             Intent serviceIntent = new Intent(context, MyForeGroundService.class);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(new Intent(context, MyForeGroundService.class));
+                context.startForegroundService(serviceIntent);
             } else {
-                context.startService(new Intent(context, MyForeGroundService.class));
+                context.startService(serviceIntent);
             }
 
         }

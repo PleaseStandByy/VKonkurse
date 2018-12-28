@@ -1,5 +1,6 @@
 package com.example.pleasestop.vkonkurse.Fragments;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -151,4 +152,10 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
             showMessage("Список пуст. Скоро будут новые конкурсы.", Constans.INFO_MESSAGE);
         }
     }
+    @Override
+    public void openSponsorGroup(Intent i) {
+        startActivity(i);
+    }
+
+
 }

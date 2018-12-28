@@ -1,6 +1,12 @@
 package com.example.pleasestop.vkonkurse.presenters;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.net.Uri;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -12,6 +18,7 @@ import com.arellomobile.mvp.MvpPresenter;
 import com.example.pleasestop.vkonkurse.MyApp;
 import com.example.pleasestop.vkonkurse.R;
 import com.example.pleasestop.vkonkurse.Repository;
+import com.example.pleasestop.vkonkurse.Utils.Constans;
 import com.example.pleasestop.vkonkurse.Utils.VkUtil;
 import com.example.pleasestop.vkonkurse.ViewsMvp.NewCompetitionView;
 import com.example.pleasestop.vkonkurse.model.Competition;
@@ -118,6 +125,8 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                         Competition competition = (Competition) o;
                         if (competition.getText() == null) {
                             competitionList.remove(competition);
+                        } else {
+                            setSpannableText(competition);
                         }
 
                     }
@@ -376,5 +385,32 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
             competition.getVkRequestTasks().add(task);
             competition.getVkRequestTaskIds().add(task.getIdTask());
         }
+    }
+
+    public void setSpannableText(Competition competition) {
+        Integer count = competition.getText().split("СПОНСОРА")[0].length();
+        SpannableString ss = new SpannableString(competition.getText());
+
+        ClickableSpan clickableSpan1 = new ClickableSpan() {
+            @Override
+            public void onClick(View widget) {
+                String url = Constans.VK_URL + "club" + competition.getListSponsorGroupId().get(0);
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse(url));
+                getViewState().openSponsorGroup(i);
+            }
+
+            @SuppressLint("ResourceAsColor")
+            @Override
+            public void updateDrawState(TextPaint ds) {
+                super.updateDrawState(ds);
+                ds.setColor(0xFF03A0D1);
+                ds.setUnderlineText(false);
+            }
+        };
+
+        ss.setSpan(clickableSpan1, count, count+8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        competition.setSpanText(ss);
     }
 }

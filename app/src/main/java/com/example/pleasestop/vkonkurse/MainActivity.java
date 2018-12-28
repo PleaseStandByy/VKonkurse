@@ -9,6 +9,7 @@ import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -112,7 +113,12 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
+        if(preferences.getBoolean(Constans.IS_AUTO, false)){
+            Intent serviceIntent = new Intent(getApplicationContext(), MyForeGroundService.class);
+            stopService(serviceIntent);
+            preferences.edit().putBoolean(Constans.IS_AUTO, true).commit();
+            ContextCompat.startForegroundService(getApplicationContext(), serviceIntent);
+        }
 
     }
 
@@ -124,6 +130,13 @@ public class MainActivity extends AppCompatActivity {
             public void onResult(VKAccessToken res) {
                 preferences.edit().putString(Constans.USER_ID,res.userId).commit();
                 preferences.edit().putString(Constans.TOKEN,res.accessToken).commit();
+
+                preferences.edit().putBoolean(Constans.IS_AUTO, true).commit();
+                String input = "test";
+                Intent serviceIntent = new Intent(getApplicationContext(), MyForeGroundService.class);
+                serviceIntent.putExtra("inputExtra", input);
+                ContextCompat.startForegroundService(getApplicationContext(), serviceIntent);
+
                 createFragment();
 //                Toast.makeText(getApplicationContext(), "norm", Toast.LENGTH_SHORT).show();
             }

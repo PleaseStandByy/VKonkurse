@@ -12,7 +12,7 @@
         android:id="@+id/background_image"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/___"
+        android:src="@drawable/background_main"
         android:scaleType="centerCrop"
         />
     <android.support.v7.widget.Toolbar
