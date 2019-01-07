@@ -207,6 +207,9 @@ public class Repository {
                 .subscribe(new Consumer<JsonObject>() {
                     @Override
                     public void accept(JsonObject jsonObject) throws Exception {
+                        if(jsonObject.get("error") != null){
+                            MyApp.fireBaseLog("capcha");
+                        }
                         Log.i(TAG1, jsonObject.toString());
                     }
                 }, new Consumer<Throwable>() {

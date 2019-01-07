@@ -6,6 +6,7 @@ import android.widget.ProgressBar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 
 public class VkUtil {
@@ -70,5 +71,11 @@ public class VkUtil {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public static Integer getTimeForVkDelay(){
+        Random rnd = new Random(System.currentTimeMillis());
+        return Constans.MIN_ADDED_NUM_VK_DEKAY
+                + rnd.nextInt(Constans.MAX_ADDED_NUM_VK_DEKAY - Constans.MIN_ADDED_NUM_VK_DEKAY + 1);
     }
 }

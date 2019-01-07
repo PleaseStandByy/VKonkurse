@@ -26,6 +26,7 @@ import com.example.pleasestop.vkonkurse.Fragments.CloseCompetitionFragment;
 import com.example.pleasestop.vkonkurse.Fragments.NewCompetitionFragments;
 import com.example.pleasestop.vkonkurse.Fragments.SettingsFragment;
 import com.example.pleasestop.vkonkurse.Utils.Constans;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKCallback;
 import com.vk.sdk.VKScope;
@@ -41,6 +42,8 @@ import butterknife.OnClick;
 import io.reactivex.annotations.Nullable;
 
 public class MainActivity extends AppCompatActivity {
+
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @BindView(R.id.buttonAutorization)
     View buttonAutorization;
@@ -69,9 +72,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         MyApp.getNetComponent().inject(this);
-        Crashlytics.log(Log.ERROR, "YourTAG", "YourMessage aaaaaa");
-        Crashlytics.logException(new Throwable("YourERROR - Start prog"));
+        logToFireBase();
         String token = preferences.getString(Constans.TOKEN, "");
         if(!token.equals("")){
             createFragment();
@@ -120,6 +123,12 @@ public class MainActivity extends AppCompatActivity {
             ContextCompat.startForegroundService(getApplicationContext(), serviceIntent);
         }
 
+    }
+
+    private void logToFireBase() {
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.CONTENT,"startProgram");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
 
     @Override

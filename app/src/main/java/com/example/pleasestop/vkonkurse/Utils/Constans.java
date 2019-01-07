@@ -12,6 +12,9 @@ public class Constans {
     public static String ALLOWED = "ALLOWED";
     public static String REJECT_FOREVER = "REJECT_FOREVER";
 
+    public static Integer MIN_ADDED_NUM_VK_DEKAY = -2;
+    public static Integer MAX_ADDED_NUM_VK_DEKAY = 2;
+
     public enum Modes {
         REJECT ("REJECT"),
         ALLOWED ("ALLOWED"),
