@@ -9,6 +9,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,12 +25,14 @@ import com.arellomobile.mvp.presenter.ProvidePresenter;
 import com.example.pleasestop.vkonkurse.Adapters.MyAdapter;
 import com.example.pleasestop.vkonkurse.MyApp;
 import com.example.pleasestop.vkonkurse.Utils.Constans;
+import com.example.pleasestop.vkonkurse.Utils.EndlessRecyclerOnScrollListener;
 import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.presenters.NewCompetitionPresenter;
 import com.example.pleasestop.vkonkurse.R;
 import com.example.pleasestop.vkonkurse.Repository;
 import com.example.pleasestop.vkonkurse.ViewsMvp.NewCompetitionView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -81,20 +84,47 @@ public class NewCompetitionFragments extends MvpAppCompatFragment implements New
         adapter = new MyAdapter<>(R.layout.item_new_compitation, presenter);
         list.setAdapter(adapter);
         swipe.setOnRefreshListener(this);
+        list.addOnScrollListener(new EndlessRecyclerOnScrollListener() {
+            @Override
+            public void onLoadMore() {
+                presenter.loadMore();
+            }
+        });
         return view;
     }
 
     @Override
     public void addList(List<Competition> list) {
-        adapter.addAll(list);
+        List<Competition> tempList = new ArrayList<>();
+        if (adapter.getItems().isEmpty()){
+            adapter.addAll(list);
+        } else {
+            for(Competition competition : list){
+                boolean isAgree = true;
+                for(Competition competitionFrom : adapter.getItems()){
+                    if(competition.getId() == competitionFrom.getId()){
+                        isAgree = false;
+                        break;
+                    }
+                }
+                if(isAgree)
+                    tempList.add(competition);
+            }
+            adapter.addAll(tempList);
+        }
+    }
+
+    @Override
+    public void clearData() {
+        adapter.clear();
     }
 
     @Override
     public void showMessage(String error, String type) {
         switch (type){
-            case "error": Toasty.error(getActivity(),error).show();
+            case Constans.ERROR_MESSAGE : Toasty.error(getActivity(),error).show();
                 break;
-            case "info": Toasty.info(getActivity(),error).show();
+            case Constans.INFO_MESSAGE : Toasty.info(getActivity(),error).show();
                 break;
         }
     }

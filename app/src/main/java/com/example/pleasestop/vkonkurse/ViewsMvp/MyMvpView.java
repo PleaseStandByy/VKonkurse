@@ -17,6 +17,8 @@ public interface MyMvpView extends MvpView {
 
     void updateList();
 
-    @StateStrategyType(AddToEndSingleStrategy.class)
     void addList(List<Competition> list);
+
+    @StateStrategyType(AddToEndSingleStrategy.class)
+    void clearData();
 }

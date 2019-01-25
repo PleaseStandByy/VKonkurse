@@ -91,6 +91,11 @@ public class CloseCompetitionFragment extends MvpAppCompatFragment implements Cl
     }
 
     @Override
+    public void clearData() {
+        adapter.clear();
+    }
+
+    @Override
     public void openWinner(Intent i) {
         startActivity(i);
     }

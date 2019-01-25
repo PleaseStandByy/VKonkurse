@@ -1,5 +1,6 @@
 package com.example.pleasestop.vkonkurse.Utils;
 
+import android.util.Log;
 import android.util.Pair;
 import android.widget.ProgressBar;
 
@@ -11,7 +12,7 @@ import java.util.Random;
 
 public class VkUtil {
 
-
+    static List<Character> numMassive = new ArrayList<>();
 
     public static Pair<String,String> getGroupAndPostIds(String link) {
         if(link.isEmpty()){
@@ -33,12 +34,28 @@ public class VkUtil {
 
     public static List<String> getSponsorId(String stringForParse){
         String[] strings = stringForParse.split("club");
-
         List<String> listId = new ArrayList<>();
+
+        if(strings.length == 1) {
+            strings = stringForParse.split("vk.com/club");
+            if(strings.length == 1) {
+                strings = stringForParse.split("vk.com/");
+                for(int i = 1; i<strings.length; i++){
+                    listId.add(customSplit(strings[i], '\n'));
+                    return listId;
+                }
+            }
+            for(int i = 1; i<strings.length; i++){
+                listId.add(customSplit(strings[i], '\n'));
+                return listId;
+            }
+        }
         for(int i = 1; i<strings.length; i++){
             listId.add(customSplit(strings[i], '|'));
         }
-
+        for(String string : listId){
+            string.replace(" ", "");
+        }
         return listId;
     }
 
@@ -73,6 +90,34 @@ public class VkUtil {
         return stringBuilder.toString();
     }
 
+    /**
+     * какой идентификатор группы - id или screenName
+     */
+    public static boolean idOrScreenNameOfGroup(String idGroup){
+        idGroup.replace(" ", "");
+
+        Log.i("groupcheck", idGroup + " - idOrScreenNameOfGroup чеканье " );
+        numMassive = new ArrayList<>();
+        numMassive.add('0');
+        numMassive.add('1');
+        numMassive.add('2');
+        numMassive.add('3');
+        numMassive.add('4');
+        numMassive.add('5');
+        numMassive.add('6');
+        numMassive.add('7');
+        numMassive.add('8');
+        numMassive.add('9');
+        boolean isId = true;
+        for(char num : idGroup.toCharArray()){
+            if(!numMassive.contains(num)) {
+                isId = false;
+                Log.i("groupcheck", idGroup + " - idOrScreenNameOfGroup аааааааааааааааааааааааааааааааааааа" );
+                break;
+            }
+        }
+        return isId;
+    }
     public static Integer getTimeForVkDelay(){
         Random rnd = new Random(System.currentTimeMillis());
         return Constans.MIN_ADDED_NUM_VK_DEKAY

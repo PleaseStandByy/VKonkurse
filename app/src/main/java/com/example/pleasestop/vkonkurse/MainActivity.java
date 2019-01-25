@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -34,12 +35,16 @@ import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKError;
 
 
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.reactivex.Observable;
 import io.reactivex.annotations.Nullable;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -116,12 +121,9 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        if(preferences.getBoolean(Constans.IS_AUTO, false)){
-            Intent serviceIntent = new Intent(getApplicationContext(), MyForeGroundService.class);
-            stopService(serviceIntent);
-            preferences.edit().putBoolean(Constans.IS_AUTO, true).commit();
-            ContextCompat.startForegroundService(getApplicationContext(), serviceIntent);
-        }
+//        if(preferences.getBoolean(Constans.IS_AUTO, false)){
+//            startAutoPart();
+//        }
 
     }
 
@@ -139,12 +141,14 @@ public class MainActivity extends AppCompatActivity {
             public void onResult(VKAccessToken res) {
                 preferences.edit().putString(Constans.USER_ID,res.userId).commit();
                 preferences.edit().putString(Constans.TOKEN,res.accessToken).commit();
-
                 preferences.edit().putBoolean(Constans.IS_AUTO, true).commit();
-                String input = "test";
-                Intent serviceIntent = new Intent(getApplicationContext(), MyForeGroundService.class);
-                serviceIntent.putExtra("inputExtra", input);
-                ContextCompat.startForegroundService(getApplicationContext(), serviceIntent);
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        startAutoPart();
+                    }
+                }, 5000);
+
 
                 createFragment();
 //                Toast.makeText(getApplicationContext(), "norm", Toast.LENGTH_SHORT).show();
@@ -181,24 +185,11 @@ public class MainActivity extends AppCompatActivity {
 //        buttonAutorization.setVisibility(View.GONE);
     }
 
-    public void setCustomFont() {
-
-        ViewGroup vg = (ViewGroup) tabLayout.getChildAt(0);
-        int tabsCount = vg.getChildCount();
-
-        for (int j = 0; j < tabsCount; j++) {
-            ViewGroup vgTab = (ViewGroup) vg.getChildAt(j);
-
-            int tabChildsCount = vgTab.getChildCount();
-
-            for (int i = 0; i < tabChildsCount; i++) {
-                View tabViewChild = vgTab.getChildAt(i);
-                if (tabViewChild instanceof TextView) {
-                    //Put your font in assests folder
-                    //assign name of the font here (Must be case sensitive)
-                    ((TextView) tabViewChild).setTypeface(Typeface.createFromAsset(getAssets(), "@font/acomic.ttf"));
-                }
-            }
+    private void startAutoPart(){
+        if(preferences.getBoolean(Constans.IS_AUTO, false)) {
+            Intent serviceIntent = new Intent(getApplicationContext(), MyForeGroundService.class);
+            stopService(serviceIntent);
+            ContextCompat.startForegroundService(getApplicationContext(), serviceIntent);
         }
     }
 }

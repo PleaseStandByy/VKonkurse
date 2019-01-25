@@ -14,6 +14,7 @@ public class Constans {
 
     public static Integer MIN_ADDED_NUM_VK_DEKAY = -2;
     public static Integer MAX_ADDED_NUM_VK_DEKAY = 2;
+    public static Integer delayGetWall = 110;
 
     public enum Modes {
         REJECT ("REJECT"),

@@ -87,7 +87,7 @@ public class VkRequestTask {
         try {
             switch (tagVkRequest){
                 case TAG_JOIN_TO_GROUP:
-                    repository.joinToGroup(group_id);
+                    repository.joinToGroup(group_id, 0);
                     break;
                 case TAG_SET_LIKE:
                     repository.setLike(owner_id, item_id);

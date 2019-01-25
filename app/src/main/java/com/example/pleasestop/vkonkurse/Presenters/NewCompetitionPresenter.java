@@ -25,7 +25,6 @@ import com.example.pleasestop.vkonkurse.model.Competition;
 import com.example.pleasestop.vkonkurse.model.CompetitionsList;
 import com.example.pleasestop.vkonkurse.model.IsMemberResult;
 import com.example.pleasestop.vkonkurse.model.VkRequestTask;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.vk.sdk.api.VKApiConst;
@@ -38,12 +37,13 @@ import com.vk.sdk.api.VKResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import es.dmoral.toasty.Toasty;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
@@ -60,9 +60,12 @@ import static com.example.pleasestop.vkonkurse.Utils.Constans.INFO_MESSAGE;
 @InjectViewState
 public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
 
-    public List<Competition> competitionList;
+    public CopyOnWriteArrayList<Competition> competitionListWithError;
+    public CopyOnWriteArrayList<Competition> competitionList;
     @Inject
     Repository repository;
+
+    private Integer lastCompId;
 
     public NewCompetitionPresenter() {
         MyApp.getNetComponent().inject(this);
@@ -71,12 +74,16 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     @Override
     protected void onFirstViewAttach() {
         super.onFirstViewAttach();
+        competitionListWithError = new CopyOnWriteArrayList<>();
+        competitionList = new CopyOnWriteArrayList<>();
         loadNewCompetitions(0);
     }
 
 
     @SuppressLint("CheckResult")
     public  void loadNewCompetitions(Integer delay) {
+        competitionListWithError.clear();
+        getViewState().clearData();
         getViewState().loading(true);
         repository.loadAllCompetition(repository.userID, delay)
                 .subscribe(new Consumer<CompetitionsList<Competition>>() {
@@ -85,14 +92,7 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                         repository.contestListDelay = competitionCompetitionsList.getContestListDelay();
                         repository.contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
                         repository.vkDelay = competitionCompetitionsList.getVkDelay();
-                        competitionList = competitionCompetitionsList.getItems();
-                        for(Competition competition : competitionList)
-                            competition.isLoading = false;
-                        if(competitionList.isEmpty()){
-                            getViewState().loading(false);
-                            getViewState().showMessage(MyApp.getContext().getResources().getString(R.string.list_is_empty), INFO_MESSAGE);
-                        } else
-                            getWalls();
+                        addWallToCompetitions(competitionCompetitionsList.getItems());
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -103,12 +103,47 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                 });
     }
 
-    private void getWalls() {
-        Observable.fromIterable(competitionList)
+
+    public void loadMore(){
+        repository.loadWithId(repository.userID, lastCompId)
+                .subscribe(new Consumer<CompetitionsList<Competition>>() {
+                    @Override
+                    public void accept(final CompetitionsList<Competition> competitionCompetitionsList) throws Exception {
+                        if(!competitionCompetitionsList.getItems().isEmpty())
+                            getViewState().showMessage("Загрузка конкурсов...", INFO_MESSAGE);
+                        repository.contestListDelay = competitionCompetitionsList.getContestListDelay();
+                        repository.contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
+                        repository.vkDelay = competitionCompetitionsList.getVkDelay();
+                        addWallToCompetitions(competitionCompetitionsList.getItems());
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        getViewState().loading(false);
+                        getViewState().showMessage(throwable.getMessage(), ERROR_MESSAGE);
+                    }
+                });
+    }
+
+    private void addWallToCompetitions(List<Competition> list){
+        competitionList.addAll(list);
+        for(Competition competition : competitionList)
+            competition.isLoading = false;
+        if(competitionList.isEmpty()){
+            getViewState().loading(false);
+        } else
+            lastCompId = competitionList.get(competitionList.size()-1).getId();
+        getWalls(list);
+    }
+
+    private void getWalls(List<Competition> list) {
+        final Integer[] delay = {0};
+        Observable.fromIterable(list)
                 .flatMap(new Function<Competition, ObservableSource<?>>() {
                     @Override
                     public ObservableSource<?> apply(Competition competition) throws Exception {
-                        return repository.getTextFromPost(competition);
+                        delay[0] += Constans.delayGetWall;
+                        return repository.getTextFromPost(competition, delay[0]);
                     }
                 })
                 .subscribeOn(Schedulers.io())
@@ -125,8 +160,14 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                         Competition competition = (Competition) o;
                         if (competition.getText() == null) {
                             competitionList.remove(competition);
+                            competitionListWithError.add(competition);
+                            list.remove(competition);
                         } else {
-                            setSpannableText(competition);
+                            if(competition.getText().equals("")){
+                                competitionList.remove(competition);
+                                list.remove(competition);
+                            } else
+                                setSpannableText(competition);
                         }
 
                     }
@@ -134,14 +175,20 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
                     @Override
                     public void onError(Throwable e) {
                         Log.i("getWallJopa", "onError: ");
-
                     }
 
                     @Override
                     public void onComplete() {
                         Log.i("getWallJopa", "onComplete: ");
                         getViewState().loading(false);
-                        getViewState().addList(competitionList);
+                        if(!competitionListWithError.isEmpty()) {
+                            addWallToCompetitions(new ArrayList<>(competitionListWithError));
+                            for(Competition competition : competitionListWithError){
+                                competitionList.remove(competition);
+                            }
+                            competitionListWithError.clear();
+                        }
+                        getViewState().addList(list);
                     }
                 });
     }
@@ -388,15 +435,30 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
     }
 
     public void setSpannableText(Competition competition) {
-        Integer count = competition.getText().split("СПОНСОРА")[0].length();
+        String[] strings = competition.getText().split("СПОНСОРА");
+        Integer count = 0;
+        Integer nextCount = 0;
+        final String[] url = new String[1];
+
+        if(strings.length > 1) {
+            nextCount = strings[0].length() + 8;
+            url[0] = Constans.VK_URL + "club" + competition.getListSponsorGroupId().get(0);
+        }
+        else {
+            strings = competition.getText().split("vk.com/");
+            nextCount = strings[0].length() + 7 + competition.getListSponsorGroupId().get(0).length();
+            url[0] = Constans.VK_URL + competition.getListSponsorGroupId().get(0);
+        }
+        count = strings[0].length();
+
         SpannableString ss = new SpannableString(competition.getText());
 
         ClickableSpan clickableSpan1 = new ClickableSpan() {
             @Override
             public void onClick(View widget) {
-                String url = Constans.VK_URL + "club" + competition.getListSponsorGroupId().get(0);
+
                 Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(url));
+                i.setData(Uri.parse(url[0]));
                 getViewState().openSponsorGroup(i);
             }
 
@@ -409,7 +471,8 @@ public class NewCompetitionPresenter extends MvpPresenter<NewCompetitionView> {
             }
         };
 
-        ss.setSpan(clickableSpan1, count, count+8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        ss.setSpan(clickableSpan1, count, nextCount, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
 
         competition.setSpanText(ss);
     }

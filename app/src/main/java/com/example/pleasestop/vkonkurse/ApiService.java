@@ -40,10 +40,21 @@ public interface ApiService {
                                    @Query("v") String sdkVersion,
                                    @Query("posts") String posts);
 
+    @GET("https://api.vk.com/method/wall.getById")
+    Observable<JsonObject> isMember(@Query("access_token") String token,
+                                   @Query("group_id") String groupId,
+                                   @Query("user_id") String userId,
+                                    @Query("extended") Integer extended);
+
     @GET("https://api.vk.com/method/groups.join")
     Observable<JsonObject> joinToGroup(@Query("access_token") String token,
                                        @Query("v") String sdkVersion,
                                        @Query("group_id") String id);
+
+    @GET("https://api.vk.com/method/utils.resolveScreenName")
+    Observable<JsonObject> getIdFromScreenName(@Query("access_token") String token,
+                                       @Query("v") String sdkVersion,
+                                       @Query("screen_name") String id);
 
     @GET("https://api.vk.com/method/likes.add")
     Observable<JsonObject> setLike(@Query("access_token") String token,

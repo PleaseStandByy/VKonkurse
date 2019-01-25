@@ -13,18 +13,13 @@ import com.example.pleasestop.vkonkurse.model.VkRequestTask;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.vk.sdk.VKSdk;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -35,7 +30,6 @@ import javax.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -84,7 +78,14 @@ public class Repository {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
+    public Observable<CompetitionsList<Competition>> loadWithId(String vkUId, Integer id) {
+        return apiService.loadCompetitionAfterId(vkUId, id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
     public Observable<IsMemberResult> loadResolution(Integer id, String vkUid, boolean isMember) {
+        Log.i("groupcheck", "loadResolutian - " + id);
         return apiService.checkResolution(id, vkUid, isMember)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.computation());
@@ -112,29 +113,36 @@ public class Repository {
                 .observeOn(Schedulers.computation());
     }
 
-    public Observable<Competition> getTextFromPost(final  Competition competition){
+    public Observable<Competition> getTextFromPost(final  Competition competition, Integer delay){
         return getWall(competition)
+                .delay(delay, TimeUnit.MILLISECONDS)
                 .map(new Function<JsonObject, Competition>() {
             @Override
             public Competition apply(JsonObject jsonObject) throws Exception {
                 if(jsonObject != null)
-                    if(jsonObject.getAsJsonArray("response") != null)
-                        if(jsonObject.getAsJsonArray("response").size() > 0) {
+                    if(jsonObject.getAsJsonArray("response") != null) {
+                        int size = jsonObject.getAsJsonArray("response").size();
+                        if (size == 0) {
+                            competition.setText("");
+                            return competition;
+                        }
+                        if (jsonObject.getAsJsonArray("response").size() > 0) {
                             jsonObject = (JsonObject) jsonObject.getAsJsonArray("response").get(0);
-                            String text = VkUtil.removeTextFromTwoSymbols('[','|', jsonObject.get("text").getAsString());
-                            text = text.replace("]","");
+                            String text = VkUtil.removeTextFromTwoSymbols('[', '|', jsonObject.get("text").getAsString());
+                            text = text.replace("]", "");
                             competition.setText(text);
                             competition.setImageLinks(new ArrayList<String>());
                             competition.setListSponsorGroupId(VkUtil.getSponsorId(jsonObject.get("text").getAsString()));
                             try {
                                 JsonArray jsonArray = jsonObject.getAsJsonArray("attachments");
-                                for(JsonElement json : jsonArray ){
+                                for (JsonElement json : jsonArray) {
                                     competition.getImageLinks().add(((JsonObject) json).get("photo").getAsJsonObject().get("photo_807").getAsString());
                                 }
-                            } catch (Exception e){
+                            } catch (Exception e) {
 
                             }
                         }
+                    }
                 return competition;
             }
         });
@@ -196,28 +204,56 @@ public class Repository {
                 });
     }
 
-    public void joinToGroup(String groupId) {
-        apiService.joinToGroup(
+    public void joinToGroup(String groupId, Integer delay) {
+        Log.i("groupcheck", groupId + "");
+        if(VkUtil.idOrScreenNameOfGroup(groupId)){
+            apiService.joinToGroup(
                     preferences.getString(Constans.TOKEN,""),
                     VKSdk.getApiVersion(),
                     groupId
-                )
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-                .subscribe(new Consumer<JsonObject>() {
-                    @Override
-                    public void accept(JsonObject jsonObject) throws Exception {
-                        if(jsonObject.get("error") != null){
-                            MyApp.fireBaseLog("capcha");
+            )
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.computation())
+                    .delay(delay, TimeUnit.MILLISECONDS)
+                    .subscribe(new Consumer<JsonObject>() {
+                        @Override
+                        public void accept(JsonObject jsonObject) throws Exception {
+                            Log.i("groupcheck", jsonObject.toString());
+                            if(jsonObject.get("error") != null){
+                                MyApp.fireBaseLog("capcha");
+                            }
+                            Log.i(TAG1, jsonObject.toString());
                         }
-                        Log.i(TAG1, jsonObject.toString());
-                    }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.i(TAG1, throwable.toString());
-                    }
-                });
+                    }, new Consumer<Throwable>() {
+                        @Override
+                        public void accept(Throwable throwable) throws Exception {
+                            Log.i(TAG1, throwable.toString());
+                        }
+                    });
+        } else {
+            apiService.getIdFromScreenName(preferences.getString(Constans.TOKEN,""),
+                    VKSdk.getApiVersion(),
+                    groupId)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.computation())
+                    .subscribe(new Consumer<JsonObject>() {
+                        @Override
+                        public void accept(JsonObject jsonObject) throws Exception {
+                            Log.i("groupcheck", " - idOrScreenNameOfGroup чеканье "  + jsonObject.toString());
+                            if(jsonObject.get("error") == null) {
+                                joinToGroup(String.valueOf(jsonObject.get("response").getAsJsonObject().get("object_id").getAsInt()), 1000);
+                            } else {
+                                joinToGroup(groupId, 4000);
+                            }
+                            Log.i(TAG1, jsonObject.toString());
+                        }
+                    }, new Consumer<Throwable>() {
+                        @Override
+                        public void accept(Throwable throwable) throws Exception {
+                            Log.i(TAG1, throwable.toString());
+                        }
+                    });
+        }
     }
 
     public Observable<Integer> isMember(String groupId){
@@ -231,10 +267,16 @@ public class Repository {
                 .map(new Function<JsonObject, Integer>() {
                     @Override
                     public Integer apply(JsonObject jsonObject) throws Exception {
+                        if(jsonObject.get("error")!= null){
+                            Log.i("groupcheck", "isMember" + groupId + jsonObject.toString());
+                            return -100;
+                        }
+                        Log.i("groupcheck", "isMember" + groupId + jsonObject.toString());
                         return jsonObject.get("response").getAsJsonObject().get("member").getAsInt();
                     }
                 });
     }
+
 
 
     public void joinToGroupSdk(final String groupId){
@@ -318,13 +360,14 @@ public class Repository {
                 JsonArray jsonArray = jsonObject.getAsJsonArray("response");
                 jsonObject = (JsonObject) jsonArray.get(0);
                 String text = jsonObject.get("text").getAsString();
+
                 competition.setListSponsorGroupId(VkUtil.getSponsorId(text));
                 if(isVkSdk){
                     for(String id : competition.getListSponsorGroupId())
                         joinToGroupSdk(id);
                 } else {
                     for(String id : competition.getListSponsorGroupId())
-                        Observable.just(id).delay(1,TimeUnit.SECONDS).subscribe((v) -> joinToGroup(v));
+                        Observable.just(id).delay(1,TimeUnit.SECONDS).subscribe((v) -> joinToGroup(v,0));
                 }
                 Log.i(TAG1, jsonObject.toString());
             }
@@ -335,6 +378,7 @@ public class Repository {
             }
         });
     }
+
 
 
     public void canselCompetition(Competition competition){

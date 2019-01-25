@@ -31,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.SocketTimeoutException;
+import java.util.Observable;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -42,6 +43,8 @@ import io.reactivex.schedulers.Schedulers;
 
 import static com.example.pleasestop.vkonkurse.MyApp.CHANNEL_ID;
 import static com.example.pleasestop.vkonkurse.Repository.TAG;
+import static com.example.pleasestop.vkonkurse.Utils.Constans.ERROR_MESSAGE;
+import static com.example.pleasestop.vkonkurse.Utils.Constans.INFO_MESSAGE;
 
 public class MyForeGroundService extends Service {
 
@@ -52,7 +55,10 @@ public class MyForeGroundService extends Service {
     private Integer vkDelay;
     private Integer contestRequestDelay;
     private Integer contestListDelay;
+    private Integer checkResolutionDelay;
+    private Integer lastCompId;
 
+    private Integer rejectDelay = 0;
     Disposable disposable;
     Disposable disposableWait;
     Disposable disposableResolution;
@@ -73,31 +79,33 @@ public class MyForeGroundService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String input = intent.getStringExtra("inputExtra");
-        observerVkReqsponseTask = new Observer<VkRequestTask>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(VkRequestTask vkRequestTask) {
-                vkRequestTask.run(repository);
-                repository.vkRequestTaskIds.remove(vkRequestTask.getIdTask());
-                runVkRequests(vkDelay);
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        };
+//        String input = intent.getStringExtra("inputExtra");
+//        observerVkReqsponseTask = new Observer<VkRequestTask>() {
+//            @Override
+//            public void onSubscribe(Disposable d) {
+//
+//            }
+//
+//            @Override
+//            public void onNext(VkRequestTask vkRequestTask) {
+//                Log.i("groupcheck", "observerVkReqsponseTask :  next");
+//                vkRequestTask.run(repository);
+//                repository.vkRequestTaskIds.remove(vkRequestTask.getIdTask());
+//                runVkRequests(vkDelay);
+//
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//                Log.i("groupcheck", "observerVkReqsponseTask :  error");
+//                runVkRequests(vkDelay);
+//            }
+//
+//            @Override
+//            public void onComplete() {
+//                Log.i("groupcheck", "observerVkReqsponseTask :  complete");
+//            }
+//        };
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
@@ -110,6 +118,7 @@ public class MyForeGroundService extends Service {
                 .build();
 
         startForeground(1, notification);
+
         loadCompitation(0);
         runVkRequests(2);
 
@@ -118,19 +127,23 @@ public class MyForeGroundService extends Service {
 
     void loadCompitation(Integer delay){
         Log.i(TAG, "loadCompitation: ");
+        checkResolutionDelay = 0;
         showError("loadCompitation");
         disposable = repository.loadAllCompetition(repository.userID)
                 .delay(delay,TimeUnit.SECONDS)
                 .subscribe(new Consumer<CompetitionsList<Competition>>() {
                     @Override
                     public void accept(CompetitionsList<Competition> competitionCompetitionsList) throws Exception {
+                        Log.i("groupcheck", competitionCompetitionsList.getCount() + "");
                         contestListDelay = competitionCompetitionsList.getContestListDelay();
                         contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
                         vkDelay = competitionCompetitionsList.getVkDelay();
+                        lastCompId = competitionCompetitionsList.getItems().get(competitionCompetitionsList.getItems().size()-1).getId();
+                        Log.i("groupcheck", lastCompId +  " lastcompid ");
                         for(Competition competition : competitionCompetitionsList.getItems()){
-                            chechUserIsMember(competition);
+                            chechUserIsMember(competition, 0);
                         }
-                        loadCompitation(contestRequestDelay);
+                        loadCompitationWithId(contestRequestDelay);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -143,28 +156,59 @@ public class MyForeGroundService extends Service {
                 });
 
     }
+
+    void loadCompitationWithId(Integer delay){
+        Log.i("groupcheck", "competitionCompetitionsList");
+        checkResolutionDelay = 0;
+        repository.loadWithId(repository.userID, lastCompId)
+                .delay(delay,TimeUnit.SECONDS)
+                .subscribe(new Consumer<CompetitionsList<Competition>>() {
+                    @Override
+                    public void accept(final CompetitionsList<Competition> competitionCompetitionsList) throws Exception {
+                        Log.i("groupcheck", competitionCompetitionsList.getCount() + "");
+                        repository.contestListDelay = competitionCompetitionsList.getContestListDelay();
+                        repository.contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
+                        repository.vkDelay = competitionCompetitionsList.getVkDelay();
+                        contestRequestDelay = competitionCompetitionsList.getContestRequestDelay();
+                        lastCompId = competitionCompetitionsList.getItems().get(competitionCompetitionsList.getItems().size()-1).getId();
+                        Log.i("groupcheck", lastCompId +  "");
+                        for(Competition competition : competitionCompetitionsList.getItems()){
+                            Log.i("groupcheck",   "кароч это чек резолюшн" + competition.getId());
+                            chechUserIsMember(competition, 0);
+                        }
+                        loadCompitationWithId(contestRequestDelay);
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        loadCompitationWithId(contestRequestDelay);
+                    }
+                });
+
+    }
+
     void checkResolution(final Competition competition, final boolean isMember, Integer delay){
         showError("checkResolution");
         if(!isMember) {
+            Log.i("groupcheck", "врыв в группу " + competition.getId());
             joinToGroup(competition.getPairIdAndPostid().first);
         }
+        Log.i("groupcheck", "внутри чекрезолюшена = " + competition.getId());
         disposableResolution = repository.loadResolution(competition.getId(), repository.userID, isMember)
-                .delay(delay,TimeUnit.SECONDS)
+                .delay(delay,TimeUnit.MILLISECONDS)
                 .subscribe(new Consumer<IsMemberResult>() {
                     @Override
                     public void accept(IsMemberResult isMemberResult) throws Exception {
-                        Log.i(TAG, "accept: " + isMemberResult.getParticipation());
+                        Log.i("groupcheck", "accept: " + isMemberResult.getParticipation() + " " + competition.getId());
                         switch (isMemberResult.getParticipation()){
                             case "ALLOWED" :
                                 setLike("post",
                                         competition.getPairIdAndPostid().first,
                                         competition.getPairIdAndPostid().second);
                                 joinToSponsorGroup(competition);
-                                showError("ALLOWED");
                                 break;
                             case "REJECTED":
-                                showError("REJECTED");
-                                checkResolution(competition, isMember, contestListDelay);
+                                checkResolution(competition, isMember, contestListDelay * 1000);
                                 break;
                             case "REJECTED_FOREVER":
                                 showError("REJECTED_FOREVER");
@@ -178,49 +222,70 @@ public class MyForeGroundService extends Service {
                     public void accept(Throwable throwable) throws Exception {
 //                        showMessage(throwable.getMessage());
                         Log.i(TAG, "acceptCheckResolution: " + throwable.toString());
-                        checkResolution(competition, isMember, contestListDelay);
+                        checkResolution(competition, isMember, contestListDelay * 1000);
                     }
                 });
     }
-    void chechUserIsMember(final Competition competition){
+    void chechUserIsMember(final Competition competition, Integer delay){
+        Log.i("groupcheck", competition.getId() + "          chechUserIsMember начало функции");
+        checkResolutionDelay += 1000;
         Pair<String, String> pairIdAndPostid = VkUtil.getGroupAndPostIds(competition.getLink());
         competition.setPairIdAndPostid(pairIdAndPostid);
-        VKRequest request =
-                new VKRequest("groups.isMember", VKParameters.from("access_token", repository.token, VKApiConst.GROUP_ID, pairIdAndPostid.first,
-                        VKApiConst.USER_ID, repository.userID ,
-                        VKApiConst.EXTENDED, 1));
-        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
-
-                try {
-                    JSONObject json = response.json.getJSONObject("response");
-                    JsonParser jsonParser = new JsonParser();
-                    JsonObject jsonObject = (JsonObject)jsonParser.parse(json.toString());
-                    Integer member = jsonObject.get("member").getAsInt();
-                    if(member == 1){
-                        checkResolution(competition, true, 0 );
-                    } else {
-                        checkResolution(competition, false, 0 );
+        repository.isMember(pairIdAndPostid.first)
+                .delay(delay, TimeUnit.MILLISECONDS)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        if(integer == -100){
+                            chechUserIsMember(competition, 1000);
+                        }
+                        if(integer == 1){
+                            checkResolution(competition, true, checkResolutionDelay );
+                        } else {
+                            checkResolution(competition, false, checkResolutionDelay );
+                        }
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
-                super.attemptFailed(request, attemptNumber, totalAttempts);
-            }
-
-            @Override
-            public void onError(VKError error) {
-                super.onError(error);
-                showError(error.errorMessage);
-            }
-
-        });
+                });
+//        VKRequest request =
+//                new VKRequest("groups.isMember", VKParameters.from("access_token", repository.token, VKApiConst.GROUP_ID, pairIdAndPostid.first,
+//                        VKApiConst.USER_ID, repository.userID ,
+//                        VKApiConst.EXTENDED, 1));
+//        request.executeSyncWithListener(new VKRequest.VKRequestListener() {
+//            @Override
+//            public void onComplete(VKResponse response) {
+//                super.onComplete(response);
+//                Log.i("groupcheck", competition.getId() + "          " + response.responseString );
+//                try {
+//                    JSONObject json = response.json.getJSONObject("response");
+//                    JsonParser jsonParser = new JsonParser();
+//                    JsonObject jsonObject = (JsonObject)jsonParser.parse(json.toString());
+//                    Integer member = jsonObject.get("member").getAsInt();
+//                    if(member == 1){
+//                        checkResolution(competition, true, checkResolutionDelay );
+//                    } else {
+//                        checkResolution(competition, false, checkResolutionDelay );
+//                    }
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//
+//            @Override
+//            public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
+//                super.attemptFailed(request, attemptNumber, totalAttempts);
+//                Log.i("groupcheck", "atemptFailed");
+//                chechUserIsMember(competition);
+//            }
+//
+//            @Override
+//            public void onError(VKError error) {
+//                super.onError(error);
+//                Log.i("groupcheck", "atemptFailed");
+//                chechUserIsMember(competition);
+//                showError(error.errorMessage);
+//            }
+//
+//        });
     }
 
     public void joinToGroup(final String groupId) {
@@ -248,6 +313,7 @@ public class MyForeGroundService extends Service {
     }
 
     private void runVkRequests(Integer delay){
+        Log.i("groupcheck", "runVkRequests: " + delay);
         if(delay == null)
             delay = 2;
         Log.i(TAG_VK_TASK, "runVkRequests: " + delay);
@@ -257,10 +323,36 @@ public class MyForeGroundService extends Service {
                     .delay(delay, TimeUnit.SECONDS)
                     .observeOn(Schedulers.newThread())
                     .subscribeOn(Schedulers.newThread())
-                    .subscribe(observerVkReqsponseTask);
+                    .subscribe(new Observer<VkRequestTask>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+
+                        }
+
+                        @Override
+                        public void onNext(VkRequestTask vkRequestTask) {
+                            Log.i("groupcheck", "observerVkReqsponseTask :  next");
+                            vkRequestTask.run(repository);
+                            repository.vkRequestTaskIds.remove(vkRequestTask.getIdTask());
+                            runVkRequests(vkDelay);
+
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.i("groupcheck", "observerVkReqsponseTask :  error");
+                            runVkRequests(vkDelay);
+                        }
+
+                        @Override
+                        public void onComplete() {
+                            Log.i("groupcheck", "observerVkReqsponseTask :  complete");
+                        }
+                    });
         } else {
             Log.i(TAG_VK_TASK, "peek is null");
-            disposableWait = io.reactivex.Observable.just(delay)
+//            disposableWait =
+                    io.reactivex.Observable.just(delay)
                     .delay(delay, TimeUnit.SECONDS)
                     .observeOn(Schedulers.newThread())
                     .subscribeOn(Schedulers.newThread())
